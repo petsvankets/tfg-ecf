@@ -1,0 +1,12 @@
+@prefix ecfo: <https://w3id.org/ecfo#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://example.org/ecf/petrol-uk-2020>
+  a ecfo:EmissionConversionFactor ;
+  rdfs:label "Petrol transport UK 2020"@en ;
+  ecfo:hasValue "2.31"^^<http://www.w3.org/2001/XMLSchema#decimal> ;
+  ecfo:hasUnit "kgCO2e/L" ;
+  ecfo:hasScope "Scope 1" ;
+  ecfo:year "2020" ;
+  dcterms:source <https://example.org/source/beis-2020> .
