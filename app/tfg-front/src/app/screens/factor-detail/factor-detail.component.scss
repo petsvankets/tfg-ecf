@@ -1,0 +1,71 @@
+.detail-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
+
+.back-button {
+  text-transform: none;
+}
+
+.detail-card {
+  border-radius: 18px;
+}
+
+.progress {
+  margin-bottom: 1rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.detail-item .label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+
+.detail-item .value {
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.value--main {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.detail-item--full {
+  grid-column: 1 / -1;
+}
+
+.divider {
+  margin: 1.5rem 0 1rem;
+}
+
+.timeseries {
+  margin-top: 0.25rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.timeseries-table {
+  width: 100%;
+  margin-top: 0.5rem;
+}

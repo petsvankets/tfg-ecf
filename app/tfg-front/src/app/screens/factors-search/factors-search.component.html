@@ -1,40 +1,66 @@
-<section class="wrap">
-  <h1>CFKG · Búsqueda</h1>
+<section class="page">
+  <header class="page-header">
+    <h1 class="title">CFKG · Búsqueda de factores</h1>
+    <p class="subtitle">
+      Escribe una actividad, combustible o término relacionado para consultar los factores de emisión del grafo CFKG.
+    </p>
+  </header>
 
-  <form class="toolbar" (submit)="onSubmit($event)">
+  <form class="search-bar" (submit)="onSubmit($event)">
     <input
       type="search"
-      placeholder="Buscar por label (p. ej. diesel)"
+      class="search-input"
+      placeholder="Buscar por nombre de factor (p. ej. diesel, propane, medium car...)"
       [value]="text()"
       (input)="text.set($any($event.target).value)"
-
     />
-    <button type="submit">Buscar</button>
+    <button type="submit" class="btn-primary">Buscar</button>
   </form>
 
-  <div *ngIf="loading()" class="status">Cargando…</div>
-  <div *ngIf="error()" class="error">{{ error() }}</div>
+  <section class="card">
+    <div *ngIf="loading()" class="status status--loading">
+      Cargando resultados…
+    </div>
 
-  <table *ngIf="!loading() && items().length" class="list">
-    <thead>
-      <tr>
-        <th>Factor</th>
-        <th>Source</th>
-        <th>Target</th>
-        <th>Scope</th>
-        <th>IRI</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let it of items()" (click)="openIri(it)">
-        <td>{{ it.label }}</td>
-        <td>{{ it.source }}</td>
-        <td>{{ it.target }}</td>
-        <td>{{ it.scope }}</td>
-        <td class="iri">{{ it.id }}</td>
-      </tr>
-    </tbody>
-  </table>
+    <div *ngIf="error()" class="status status--error">
+      {{ error() }}
+    </div>
 
-  <p *ngIf="!loading() && !items().length" class="status">Escribe y pulsa “Buscar”.</p>
+    <table *ngIf="!loading() && items().length" class="table">
+      <thead>
+        <tr>
+          <th>Factor</th>
+          <th>Unidad</th>
+          <th>País</th>
+          <th>Último valor</th>
+          <th>Año</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let it of items()">
+          <td class="col-main">{{ it.name }}</td>
+          <td>{{ it.unit }}</td>
+          <td>{{ it.country }}</td>
+          <td>{{ it.latestValue }}</td>
+          <td>{{ it.latestYear }}</td>
+          <td class="col-actions">
+            <a
+              [routerLink]="['/factor', encodeId(it)]"
+              class="link-button"
+            >
+              Ver detalle
+            </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p
+      *ngIf="!loading() && !items().length && !error()"
+      class="status status--empty"
+    >
+      Escribe un texto y pulsa “Buscar” para ver factores de emisión.
+    </p>
+  </section>
 </section>
