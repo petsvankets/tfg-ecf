@@ -1,11 +1,6 @@
 <div class="detail-page">
   <div class="detail-header">
-    <button
-      mat-stroked-button
-      color="primary"
-      routerLink="/"
-      class="back-button"
-    >
+    <button matButton="tonal" color="primary" routerLink="/" class="back-button">
       ← Volver a la búsqueda
     </button>
   </div>
@@ -19,20 +14,19 @@
     </mat-card-header>
 
     <mat-card-content>
-      <!-- Barra de progreso -->
-      <mat-progress-bar
-        *ngIf="loading()"
-        mode="indeterminate"
-        color="primary"
-        class="progress"
-      ></mat-progress-bar>
+      <!-- Cargando -->
+      <div class="loading-wrapper" *ngIf="loading()">
+        <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
+        <span>Cargando factor…</span>
+      </div>
 
       <!-- Error -->
       <div *ngIf="error()" class="status status--error">
         {{ error() }}
       </div>
 
-      <ng-container *ngIf="!loading() && !error() && detail() as d">
+      <!-- Contenido cuando hay factor -->
+      <ng-container *ngIf="!loading() && !error() && factor() as d">
         <!-- Ficha principal -->
         <section class="detail-grid">
           <div class="detail-item detail-item--full">
@@ -73,12 +67,7 @@
           <div class="detail-item">
             <div class="label">Publisher</div>
             <div class="value">
-              <a
-                *ngIf="d.publisher"
-                [href]="d.publisher"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a *ngIf="d.publisher" [href]="d.publisher" target="_blank" rel="noreferrer">
                 {{ d.publisher }}
               </a>
               <span *ngIf="!d.publisher">—</span>
@@ -109,50 +98,60 @@
           </div>
 
           <div class="detail-item detail-item--full" *ngIf="d.tags?.length">
-  <div class="label">Tags</div>
-  <div class="value">
-    <mat-chip-set aria-label="Tags del factor">
-      <mat-chip *ngFor="let t of d.tags" selected>
-        {{ t }}
-      </mat-chip>
-    </mat-chip-set>
-  </div>
-</div>
-
+            <div class="label">Tags</div>
+            <div class="value">
+              <mat-chip-set aria-label="Tags del factor">
+                <mat-chip *ngFor="let t of d.tags" selected>
+                  {{ t }}
+                </mat-chip>
+              </mat-chip-set>
+            </div>
+          </div>
         </section>
 
-        <mat-divider class="divider"></mat-divider>
+        <hr class="divider" />
 
-        <!-- Serie histórica -->
+        <!-- Serie histórica + gráfica -->
         <section class="timeseries">
           <h2 class="section-title">Evolución en el tiempo</h2>
 
-          <p *ngIf="!series().length" class="status status--empty">
-            No se han encontrado otros años para este factor con la misma fuente,
-            gas, unidades y localización.
-          </p>
+          <ng-container *ngIf="timeseries() as ts">
+            <p *ngIf="!ts.series.length" class="status status--empty">
+              No se han encontrado otros años para este factor con la misma actividad, gas, unidades
+              y localización.
+            </p>
 
-          <table
-            *ngIf="series().length"
-            mat-table
-            [dataSource]="series()"
-            class="mat-elevation-z1 timeseries-table"
-          >
-            <!-- Año -->
-            <ng-container matColumnDef="year">
-              <th mat-header-cell *matHeaderCellDef> Año </th>
-              <td mat-cell *matCellDef="let row"> {{ row.year }} </td>
-            </ng-container>
+            <div *ngIf="ts.series.length">
+              <!-- Gráfica -->
+              <div class="chart-container">
+                <canvas
+                  baseChart
+                  [data]="lineChartData"
+                  [options]="lineChartOptions"
+                  [type]="'line'"
+                >
+                </canvas>
+              </div>
 
-            <!-- Valor -->
-            <ng-container matColumnDef="value">
-              <th mat-header-cell *matHeaderCellDef> Valor </th>
-              <td mat-cell *matCellDef="let row"> {{ row.value }} </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="seriesColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: seriesColumns"></tr>
-          </table>
+              <!-- Tabla simple con la serie -->
+              <div class="timeseries-table-wrapper" *ngIf="ts.series.length">
+                <table class="timeseries-table">
+                  <thead>
+                    <tr>
+                      <th>Año</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of ts.series">
+                      <td>{{ row.year }}</td>
+                      <td>{{ row.value | number : '1.5-5' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </ng-container>
         </section>
       </ng-container>
     </mat-card-content>

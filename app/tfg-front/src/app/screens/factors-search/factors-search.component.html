@@ -32,6 +32,7 @@
           <th>Factor</th>
           <th>Unidad</th>
           <th>País</th>
+          <th>Gas</th>
           <th>Último valor</th>
           <th>Año</th>
           <th></th>
@@ -42,16 +43,19 @@
           <td class="col-main">{{ it.name }}</td>
           <td>{{ it.unit }}</td>
           <td>{{ it.country }}</td>
+          <td>{{ it.targetGas || '—' }}</td>
           <td>{{ it.latestValue }}</td>
           <td>{{ it.latestYear }}</td>
           <td class="col-actions">
-            <a
-              [routerLink]="['/factor', encodeId(it)]"
-              class="link-button"
-            >
-              Ver detalle
-            </a>
-          </td>
+  <button
+    mat-raised-button
+    color="primary"
+    [routerLink]="['/factor', encodeId(it)]"
+    class="detail-button"
+  >
+    Ver detalle
+  </button>
+</td>
         </tr>
       </tbody>
     </table>
@@ -62,5 +66,6 @@
     >
       Escribe un texto y pulsa “Buscar” para ver factores de emisión.
     </p>
+
   </section>
 </section>

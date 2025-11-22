@@ -2,12 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CfkgService, FactorItem } from '../../services/cfkg.service';
 import { RouterModule } from '@angular/router';
-
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-factors-search',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule,
+          RouterModule,
+          MatButtonModule ],
   templateUrl: './factors-search.component.html',
   styleUrls: ['./factors-search.component.scss']
 })

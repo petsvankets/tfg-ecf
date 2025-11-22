@@ -1,74 +1,142 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+
 import {
   CfkgService,
   FactorDetail,
+  FactorTimeseries,
   FactorSeriesPoint,
 } from '../../services/cfkg.service';
 
-// Angular Material
 import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatTableModule } from '@angular/material/table';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonModule } from '@angular/material/button';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
+
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration } from 'chart.js';
 
 @Component({
   selector: 'app-factor-detail',
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
+    RouterLink,
     MatCardModule,
-    MatChipsModule,
-    MatTableModule,
-    MatDividerModule,
-    MatProgressBarModule,
     MatButtonModule,
+    MatChipsModule,
+    MatProgressSpinnerModule,
+    MatIconModule,
+    BaseChartDirective, // 👈 gráfico
   ],
   templateUrl: './factor-detail.component.html',
   styleUrls: ['./factor-detail.component.scss'],
 })
 export class FactorDetailComponent {
+  private cfkg = inject(CfkgService);
   private route = inject(ActivatedRoute);
-  private svc = inject(CfkgService);
 
+  // Estado básico
   factorId = signal<string>('');
-  detail = signal<FactorDetail | null>(null);
-  series = signal<FactorSeriesPoint[]>([]);
-  loading = signal(false);
+  loading = signal<boolean>(true);
   error = signal<string | null>(null);
 
-  seriesColumns: string[] = ['year', 'value'];
+  factor = signal<FactorDetail | null>(null);
+  timeseries = signal<FactorTimeseries | null>(null);
+
+  // Datos de la gráfica
+  lineChartData: ChartConfiguration['data'] = {
+    labels: [],
+    datasets: [],
+  };
+
+  lineChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        title: { display: true, text: 'Año' },
+      },
+      y: {
+        title: { display: true, text: 'Valor del factor' },
+      },
+    },
+    plugins: {
+      legend: {
+        display: true,
+      },
+      tooltip: {
+        enabled: true,
+      },
+    },
+  };
 
   constructor() {
-    const encoded = this.route.snapshot.paramMap.get('id') ?? '';
-    const decoded = decodeURIComponent(encoded);
-    this.factorId.set(decoded);
-
-    this.load(decoded);
+    const id = decodeURIComponent(
+      this.route.snapshot.paramMap.get('id') || ''
+    );
+    this.factorId.set(id);
+    this.loadData();
   }
 
-  private load(id: string) {
+  private loadData() {
+    const id = this.factorId();
     this.loading.set(true);
     this.error.set(null);
 
-    forkJoin({
-      detail: this.svc.getFactorDetail(id),
-      timeseries: this.svc.getFactorTimeseries(id),
-    }).subscribe({
-      next: ({ detail, timeseries }) => {
-        this.detail.set(detail);
-        this.series.set(timeseries.series);
+    // Detalle del factor (LDKit + resolver)
+    this.cfkg.getFactorDetail(id).subscribe({
+      next: (detail: FactorDetail) => {
+        this.factor.set(detail);
         this.loading.set(false);
       },
       error: (e) => {
-        this.error.set(e?.message || 'Error obteniendo detalle del factor');
+        console.error(e);
+        this.error.set(e?.message || 'Error cargando el factor');
         this.loading.set(false);
       },
     });
+
+    // Serie temporal
+    this.cfkg.getFactorTimeseries(id).subscribe({
+      next: (ts: FactorTimeseries) => {
+        this.timeseries.set(ts);
+        this.updateChart(ts);
+      },
+      error: (e) => {
+        console.error(e);
+      },
+    });
+  }
+
+  private updateChart(ts: FactorTimeseries) {
+    if (!ts || !ts.series.length) {
+      this.lineChartData = { labels: [], datasets: [] };
+      return;
+    }
+
+    const labels = ts.series.map((p: FactorSeriesPoint) =>
+      p.year.toString()
+    );
+    const data = ts.series.map((p: FactorSeriesPoint) => p.value);
+
+    this.lineChartData = {
+      labels,
+      datasets: [
+        {
+          data,
+          label: 'Factor de emisión',
+          fill: false,
+          tension: 0.2,
+          pointRadius: 3,
+        },
+      ],
+    };
+  }
+
+  backToSearch() {
+    // Si tienes routerLink en el HTML para volver, esto igual ni lo usas.
   }
 }

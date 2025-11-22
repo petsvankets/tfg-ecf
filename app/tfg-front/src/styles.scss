@@ -1,13 +1,61 @@
-/* Tema claro de Angular Material */
+/* Tema de Angular Material (claro) */
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
-html, body {
+/* Fuente y reset básico */
+html,
+body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #f3f4f6;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
 }
 
-/* Fondo por defecto de la app Material */
+/* Fondo general de la app */
 .mat-app-background {
-  background-color: #f3f4f6;
+  min-height: 100vh;
+
+  /* Degradado suave tipo “dashboard” */
+  background:
+    radial-gradient(circle at 0% 0%, #dbeafe 0, #eef2ff 24%, transparent 55%),
+    radial-gradient(circle at 100% 0%, #e0f2fe 0, #ecfeff 20%, transparent 50%),
+    linear-gradient(to bottom, #f9fafb 40%, #eef2ff 100%);
+}
+
+/* Cartas principales: búsqueda y detalle */
+.search-card,
+.detail-card {
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.16),
+    0 0 0 1px rgba(148, 163, 184, 0.12);
+  border: none;
+}
+
+/* Pequeña animación al hacer hover sobre la card de resultados */
+.search-card:hover,
+.detail-card:hover {
+  transform: translateY(-2px);
+  transition: transform 0.18s ease-out, box-shadow 0.18s ease-out;
+  box-shadow:
+    0 30px 80px rgba(15, 23, 42, 0.22),
+    0 0 0 1px rgba(148, 163, 184, 0.16);
+}
+
+/* Toolbar superior */
+.top-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+
+.logo {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.spacer {
+  flex: 1 1 auto;
 }
