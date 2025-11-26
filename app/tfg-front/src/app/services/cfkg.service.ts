@@ -14,6 +14,7 @@ export interface FactorItem {
   latestYear?: number;
   targetGas?: string;  // 👈 nuevo
   scope?: string;      // 👈 opcional
+  tags?: string[];
 }
 export interface FactorDetail {
   id: string;
@@ -52,59 +53,77 @@ export class CfkgService {
   private http = inject(HttpClient);
   private endpoint = environment.SPARQL_ENDPOINT; // 'https://sparql.cf.linkeddata.es/cf'
 
-  searchFactors(text: string, limit = 20): Observable<FactorItem[]> {
-    const safeText = (text || '').replace(/"/g, '\\"');
+ searchFactors(
+  text: string,
+  filters?: { scope?: string; year?: string; tag?: string },
+  limit = 50
+): Observable<FactorItem[]> {
+  const safeText = (text || '').replace(/"/g, '\\"');
+  const safeYear = (filters?.year || '').replace(/"/g, '\\"');
+  const safeTag = (filters?.tag || '').replace(/"/g, '\\"');
+  const scopeIri = filters?.scope || '';
 
-    const sparql = `
+  const sparql = `
 PREFIX ecfo: <https://w3id.org/ecfo#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?cf ?label ?value ?srcUnit ?srcUnitLabel ?tgtUnit ?tgtUnitLabel
-       ?loc ?locLabel ?period ?target ?targetLabel ?scope
+       ?loc ?locLabel ?period ?scope ?tagLabel
 WHERE {
   ?cf a ecfo:EmissionConversionFactor ;
       rdf:value ?value ;
       ecfo:hasSourceUnit ?srcUnit ;
       ecfo:hasTargetUnit ?tgtUnit ;
-      ecfo:hasEmissionTarget ?target .        # 👈 gas objetivo
+      ecfo:hasApplicableLocation ?loc .
 
-  OPTIONAL { ?cf      rdfs:label ?label }
+  OPTIONAL { ?cf rdfs:label ?label }
   OPTIONAL { ?srcUnit rdfs:label ?srcUnitLabel }
   OPTIONAL { ?tgtUnit rdfs:label ?tgtUnitLabel }
-  OPTIONAL {
-    ?cf ecfo:hasApplicableLocation ?loc .
-    OPTIONAL { ?loc rdfs:label ?locLabel }
-  }
+  OPTIONAL { ?loc rdfs:label ?locLabel }
   OPTIONAL { ?cf ecfo:hasApplicablePeriod ?period }
-  OPTIONAL { ?cf ecfo:hasScope ?scope }       # 👈 scope
-  OPTIONAL { ?target rdfs:label ?targetLabel }# 👈 etiqueta del gas
+  OPTIONAL { ?cf ecfo:hasScope ?scope }
+  OPTIONAL { ?cf ecfo:hasTag ?tag .
+             OPTIONAL { ?tag rdfs:label ?tagLabel }
+  }
 
-  ${safeText
-    ? `FILTER(CONTAINS(LCASE(STR(?label)), LCASE("${safeText}")))`
-    : ''}
+  ${safeText ? `FILTER(CONTAINS(LCASE(STR(?label)), LCASE("${safeText}")))` : ''}
+  ${scopeIri ? `FILTER(?scope = <${scopeIri}>)` : ''}
+  ${safeYear ? `FILTER regex(str(?period), "${safeYear}")` : ''}
+  ${safeTag ? `FILTER(CONTAINS(LCASE(STR(?tagLabel)), LCASE("${safeTag}")))` : ''}
 }
 ORDER BY LCASE(STR(?label))
 LIMIT ${limit}
 `.trim();
 
+  const body = new HttpParams().set('query', sparql);
+  const headers = new HttpHeaders({
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    Accept: 'application/sparql-results+json',
+  });
 
-    const body = new HttpParams().set('query', sparql);
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      Accept: 'application/sparql-results+json',
-    });
+  return this.http.post<any>(this.endpoint, body.toString(), { headers }).pipe(
+    map((res) => {
+      const rows = res?.results?.bindings ?? [];
 
-    return this.http.post<any>(this.endpoint, body.toString(), { headers }).pipe(
-      map((res) => {
-        const rows = res?.results?.bindings ?? [];
+      // Agrupar por factor para manejar múltiples tags
+      const mapItems = new Map<
+        string,
+        { item: FactorItem; tags: Set<string> }
+      >();
 
-        const items: FactorItem[] = rows.map((r: any) => {
-          const id = r.cf?.value ?? '';
+      for (const r of rows) {
+        const id = r.cf?.value ?? '';
+        if (!id) continue;
 
+        let entry = mapItems.get(id);
+        if (!entry) {
           const label = r.label?.value ?? '(sin título)';
           const valueRaw = r.value?.value;
-          const value = valueRaw != null ? Number(valueRaw) : undefined;
+          const value =
+            valueRaw != null && valueRaw !== ''
+              ? Number(valueRaw)
+              : undefined;
 
           const srcUnitIri = r.srcUnit?.value ?? '';
           const tgtUnitIri = r.tgtUnit?.value ?? '';
@@ -116,26 +135,41 @@ LIMIT ${limit}
 
           const period = r.period?.value ?? id;
           const latestYear = extractYear(period);
-            const gasLabel =
-    r.targetLabel?.value || localName(r.target?.value ?? ''); // 👈 gas
-  const scope = r.scope?.value ?? undefined;                  // 👈 scope
 
-          return {
+          const baseItem: FactorItem = {
             id,
             name: label,
-            unit: buildUnit(srcUnitLabel, tgtUnitLabel, srcUnitIri, tgtUnitIri),
+            unit: buildUnit(
+              srcUnitLabel,
+              tgtUnitLabel,
+              srcUnitIri,
+              tgtUnitIri
+            ),
             country: locLabel || localName(locIri) || '—',
             latestValue: value,
             latestYear: latestYear ?? undefined,
-            targetGas: gasLabel,
-    scope,
+            tags: [],
           };
-        });
 
-        return items;
-      })
-    );
-  }
+          entry = { item: baseItem, tags: new Set<string>() };
+          mapItems.set(id, entry);
+        }
+
+        const tagLabel = r.tagLabel?.value;
+        if (tagLabel) {
+          entry.tags.add(tagLabel);
+        }
+      }
+
+      const items: FactorItem[] = Array.from(mapItems.values()).map((e) => ({
+        ...e.item,
+        tags: Array.from(e.tags),
+      }));
+
+      return items;
+    })
+  );
+}
 
 
 getFactorDetail(id: string): Observable<FactorDetail> {

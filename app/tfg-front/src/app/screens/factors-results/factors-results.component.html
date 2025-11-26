@@ -1,0 +1,118 @@
+<div class="results-layout">
+
+  <!-- PANEL DE FILTROS -->
+  <mat-card class="filters-card mat-elevation-z4">
+
+    <mat-card-title>Filtros</mat-card-title>
+    <mat-divider></mat-divider>
+
+    <!-- Buscar -->
+    <div class="filter-group">
+      <mat-form-field appearance="outline">
+        <mat-label>Buscar</mat-label>
+        <input matInput [(ngModel)]="searchTerm" (input)="applyFilters()">
+      </mat-form-field>
+    </div>
+
+    <!-- Año -->
+    <div class="filter-group">
+      <mat-form-field appearance="outline">
+        <mat-label>Año</mat-label>
+        <mat-select [(ngModel)]="selectedYear" (selectionChange)="applyFilters()">
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let y of years" [value]="y">
+            {{ y }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Categoría -->
+    <div class="filter-group">
+      <mat-form-field appearance="outline">
+        <mat-label>Categoría</mat-label>
+        <mat-select [(ngModel)]="selectedCategory" (selectionChange)="applyFilters()">
+          <mat-option value="">Todas</mat-option>
+          <mat-option value="diesel">Diesel</mat-option>
+          <mat-option value="electricity">Electricidad</mat-option>
+          <mat-option value="hgv">HGV</mat-option>
+          <mat-option value="delivery">Delivery</mat-option>
+          <mat-option value="propane">Propane</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+  </mat-card>
+
+  <!-- PANEL DE RESULTADOS -->
+  <mat-card class="results-card mat-elevation-z2">
+
+    <mat-card-title>Resultados</mat-card-title>
+    <mat-divider></mat-divider>
+
+    <mat-progress-bar
+  *ngIf="loading()"
+  mode="indeterminate"
+  color="primary"
+  class="loading-bar">
+</mat-progress-bar>
+
+
+
+
+   <p *ngIf="!loading() && !filteredResults.length" class="no-results">
+  No se encontraron factores con los criterios seleccionados.
+</p>
+
+
+    <table
+      *ngIf="filteredResults.length"
+      mat-table
+      [dataSource]="filteredResults"
+      class="results-table">
+
+      <!-- Nombre -->
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+      </ng-container>
+
+      <!-- Unidad -->
+      <ng-container matColumnDef="unit">
+        <th mat-header-cell *matHeaderCellDef>Unidad</th>
+        <td mat-cell *matCellDef="let row">{{ row.unit }}</td>
+      </ng-container>
+
+      <!-- País -->
+      <ng-container matColumnDef="country">
+        <th mat-header-cell *matHeaderCellDef>País</th>
+        <td mat-cell *matCellDef="let row">{{ row.country }}</td>
+      </ng-container>
+
+      <!-- Año -->
+      <ng-container matColumnDef="year">
+        <th mat-header-cell *matHeaderCellDef>Año</th>
+        <td mat-cell *matCellDef="let row">{{ row.latestYear }}</td>
+      </ng-container>
+
+      <!-- Detalle -->
+      <ng-container matColumnDef="detail">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          <button
+            mat-stroked-button
+            color="primary"
+            [routerLink]="['/factor', encodeId(row)]">
+            Ver
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+
+    </table>
+
+  </mat-card>
+
+</div>

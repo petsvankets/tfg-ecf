@@ -1,71 +1,59 @@
-<section class="page">
-  <header class="page-header">
-    <h1 class="title">CFKG · Búsqueda de factores</h1>
-    <p class="subtitle">
-      Escribe una actividad, combustible o término relacionado para consultar los factores de emisión del grafo CFKG.
-    </p>
-  </header>
+<div class="home-container">
 
-  <form class="search-bar" (submit)="onSubmit($event)">
-    <input
-      type="search"
-      class="search-input"
-      placeholder="Buscar por nombre de factor (p. ej. diesel, propane, medium car...)"
-      [value]="text()"
-      (input)="text.set($any($event.target).value)"
-    />
-    <button type="submit" class="btn-primary">Buscar</button>
-  </form>
+  <!-- TARJETA HERO -->
+  <mat-card class="hero-card mat-elevation-z8">
+    <mat-card-header>
+      <div mat-card-avatar class="hero-avatar">
+        <mat-icon>travel_explore</mat-icon>
+      </div>
 
-  <section class="card">
-    <div *ngIf="loading()" class="status status--loading">
-      Cargando resultados…
-    </div>
+      <mat-card-title>CFKG · Explorador de factores</mat-card-title>
+      <mat-card-subtitle>
+        Busca factores de emisión o explora por sectores destacados.
+      </mat-card-subtitle>
+    </mat-card-header>
 
-    <div *ngIf="error()" class="status status--error">
-      {{ error() }}
-    </div>
+    <mat-card-content>
+      <form class="hero-search" (submit)="onSubmit($event)">
+        <mat-form-field appearance="outline" class="hero-search-field">
+          <mat-label>Buscar factores (diesel, propane, electricity…)</mat-label>
+          <input
+            matInput
+            type="search"
+            [value]="query()"
+            (input)="query.set($any($event.target).value)"
+          />
+        </mat-form-field>
 
-    <table *ngIf="!loading() && items().length" class="table">
-      <thead>
-        <tr>
-          <th>Factor</th>
-          <th>Unidad</th>
-          <th>País</th>
-          <th>Gas</th>
-          <th>Último valor</th>
-          <th>Año</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let it of items()">
-          <td class="col-main">{{ it.name }}</td>
-          <td>{{ it.unit }}</td>
-          <td>{{ it.country }}</td>
-          <td>{{ it.targetGas || '—' }}</td>
-          <td>{{ it.latestValue }}</td>
-          <td>{{ it.latestYear }}</td>
-          <td class="col-actions">
-  <button
-    mat-raised-button
-    color="primary"
-    [routerLink]="['/factor', encodeId(it)]"
-    class="detail-button"
-  >
-    Ver detalle
-  </button>
-</td>
-        </tr>
-      </tbody>
-    </table>
+        <button mat-raised-button color="primary" class="hero-search-button">
+          Buscar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
 
-    <p
-      *ngIf="!loading() && !items().length && !error()"
-      class="status status--empty"
-    >
-      Escribe un texto y pulsa “Buscar” para ver factores de emisión.
-    </p>
+  <!-- TARJETA DE SECTORES -->
+  <mat-card class="sectors-card mat-elevation-z4">
+    <mat-card-header>
+      <mat-card-title>Sectores destacados</mat-card-title>
+      <mat-card-subtitle>Explora factores por áreas temáticas</mat-card-subtitle>
+    </mat-card-header>
 
-  </section>
-</section>
+    <mat-card-content>
+      <div class="sector-grid">
+        <mat-card
+          class="sector-card mat-elevation-z2"
+          *ngFor="let c of categories"
+          (click)="searchCategory(c.tag)"
+        >
+          <mat-icon class="sector-icon">{{ c.icon }}</mat-icon>
+          <div class="sector-text">
+            <div class="sector-title">{{ c.label }}</div>
+            <div class="sector-tag">{{ c.tag }}</div>
+          </div>
+        </mat-card>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+</div>

@@ -1,55 +1,54 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CfkgService, FactorItem } from '../../services/cfkg.service';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-factors-search',
   standalone: true,
-  imports: [CommonModule,
-          RouterModule,
-          MatButtonModule ],
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCardModule,
+    MatIconModule,
+  ],
   templateUrl: './factors-search.component.html',
-  styleUrls: ['./factors-search.component.scss']
+  styleUrls: ['./factors-search.component.scss'],
 })
 export class FactorsSearchComponent {
-  private svc = inject(CfkgService);
+  private router = inject(Router);
 
-  text = signal('');
-  loading = signal(false);
-  error = signal<string | null>(null);
-  items = signal<FactorItem[]>([]);
+  query = signal('');
+
+  categories = [
+    { label: 'Vehículos pesados (HGV)', tag: 'hgv', icon: 'local_shipping' },
+    { label: 'Vehículos ligeros / Delivery', tag: 'delivery', icon: 'airport_shuttle' },
+    { label: 'Vehículos (artics)', tag: 'artics', icon: 'local_shipping' },
+    { label: 'Electricidad', tag: 'electricity', icon: 'bolt' },
+    { label: 'Combustibles gaseosos', tag: 'propane', icon: 'gas_meter' },
+    { label: 'Diesel y derivados', tag: 'diesel', icon: 'local_gas_station' },
+  ];
 
   onSubmit(ev: Event) {
     ev.preventDefault();
-    this.fetch();
-  }
+    const q = this.query().trim();
+    if (!q) return;
 
-  fetch() {
-    const query = this.text().trim();
-    if (!query) {
-      this.items.set([]);
-      return;
-    }
-
-    this.loading.set(true);
-    this.error.set(null);
-
-    this.svc.searchFactors(query).subscribe({
-      next: (rows) => { this.items.set(rows); this.loading.set(false); },
-      error: (e) => {
-        this.error.set(e?.message || 'Error consultando CFKG');
-        this.loading.set(false);
-      }
+    this.router.navigate(['/search'], {
+      queryParams: { q }
     });
   }
 
-  openIri(it: FactorItem) {
-    if (it.id) window.open(it.id, '_blank');
-  }
-
-  encodeId(it: FactorItem) {
-    return encodeURIComponent(it.id);
+  searchCategory(tag: string) {
+    this.router.navigate(['/search'], {
+      queryParams: { category: tag }
+    });
   }
 }
