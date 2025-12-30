@@ -1,115 +1,196 @@
-<div class="results-layout">
+<div class="results-page">
 
-  <!-- PANEL DE FILTROS -->
-  <mat-card class="filters-card mat-elevation-z4">
+  <!-- ===== LEFT FILTERS ===== -->
+  <mat-card class="filters-card">
 
-    <mat-card-title>Filtros</mat-card-title>
-    <mat-divider></mat-divider>
+    <mat-card-title>Search filters</mat-card-title>
 
-    <!-- Buscar -->
-    <div class="filter-group">
-      <mat-form-field appearance="outline">
-        <mat-label>Buscar</mat-label>
-        <input matInput [(ngModel)]="searchTerm" (input)="applyFilters()">
-      </mat-form-field>
-    </div>
+    <!-- Search text -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Search factor</mat-label>
+      <input
+        matInput
+        [value]="searchTerm"
+        (keyup.enter)="search()"
+        (input)="searchTerm = $any($event.target).value">
+    </mat-form-field>
 
-    <!-- Año -->
-    <div class="filter-group">
-      <mat-form-field appearance="outline">
-        <mat-label>Año</mat-label>
-        <mat-select [(ngModel)]="selectedYear" (selectionChange)="applyFilters()">
-          <mat-option value="">Todos</mat-option>
-          <mat-option *ngFor="let y of years" [value]="y">
-            {{ y }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
+    <!-- Gas selector -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Gas</mat-label>
+      <mat-select [(value)]="gas" (selectionChange)="search()">
+        <mat-option value="CO2">CO₂</mat-option>
+        <mat-option value="CO2e">CO₂e</mat-option>
+        <mat-option value="CH4">CH₄</mat-option>
+        <mat-option value="N2O">N₂O</mat-option>
+      </mat-select>
+    </mat-form-field>
 
-    <!-- Categoría -->
-    <div class="filter-group">
-      <mat-form-field appearance="outline">
-        <mat-label>Categoría</mat-label>
-        <mat-select [(ngModel)]="selectedCategory" (selectionChange)="applyFilters()">
-          <mat-option value="">Todas</mat-option>
-          <mat-option value="diesel">Diesel</mat-option>
-          <mat-option value="electricity">Electricidad</mat-option>
-          <mat-option value="hgv">HGV</mat-option>
-          <mat-option value="delivery">Delivery</mat-option>
-          <mat-option value="propane">Propane</mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
+    <button
+      mat-raised-button
+      color="primary"
+      class="full-width"
+      (click)="search()">
+      Apply filters
+    </button>
 
   </mat-card>
 
-  <!-- PANEL DE RESULTADOS -->
-  <mat-card class="results-card mat-elevation-z2">
+  <!-- ===== RESULTS ===== -->
+  <mat-card class="results-card">
 
-    <mat-card-title>Resultados</mat-card-title>
+    <mat-card-title class="results-title">
+      Results
+      <span class="results-count" *ngIf="items.length">
+        {{ items.length }} factors
+      </span>
+    </mat-card-title>
+
     <mat-divider></mat-divider>
 
     <mat-progress-bar
-  *ngIf="loading()"
-  mode="indeterminate"
-  color="primary"
-  class="loading-bar">
-</mat-progress-bar>
+      *ngIf="loading()"
+      mode="indeterminate">
+    </mat-progress-bar>
+
+    <p *ngIf="!loading() && !items.length" class="empty">
+      No emission factors found.
+    </p>
+
+     <table
+  *ngIf="items.length"
+  mat-table
+  [dataSource]="items"
+  multiTemplateDataRows
+  class="results-table mat-elevation-z2">
 
 
+      <!-- ================== COLUMNS ================== -->
 
-
-   <p *ngIf="!loading() && !filteredResults.length" class="no-results">
-  No se encontraron factores con los criterios seleccionados.
-</p>
-
-
-    <table
-      *ngIf="filteredResults.length"
-      mat-table
-      [dataSource]="filteredResults"
-      class="results-table">
-
-      <!-- Nombre -->
+      <!-- Factor -->
       <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <th mat-header-cell *matHeaderCellDef>Factor</th>
         <td mat-cell *matCellDef="let row">{{ row.name }}</td>
       </ng-container>
 
-      <!-- Unidad -->
+      <!-- Unit -->
       <ng-container matColumnDef="unit">
-        <th mat-header-cell *matHeaderCellDef>Unidad</th>
+        <th mat-header-cell *matHeaderCellDef>Unit</th>
         <td mat-cell *matCellDef="let row">{{ row.unit }}</td>
       </ng-container>
 
-      <!-- País -->
+      <!-- Country -->
       <ng-container matColumnDef="country">
-        <th mat-header-cell *matHeaderCellDef>País</th>
+        <th mat-header-cell *matHeaderCellDef>Location</th>
         <td mat-cell *matCellDef="let row">{{ row.country }}</td>
       </ng-container>
 
-      <!-- Año -->
-      <ng-container matColumnDef="year">
-        <th mat-header-cell *matHeaderCellDef>Año</th>
-        <td mat-cell *matCellDef="let row">{{ row.latestYear }}</td>
+      <!-- Scope -->
+      <ng-container matColumnDef="scope">
+        <th mat-header-cell *matHeaderCellDef>Scope</th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.scopeIri?.split('#').pop() || '—' }}
+        </td>
       </ng-container>
 
-      <!-- Detalle -->
+      <!-- Context -->
+      <ng-container matColumnDef="context">
+        <th mat-header-cell *matHeaderCellDef>Context</th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.context || '—' }}
+        </td>
+      </ng-container>
+
+      <!-- Gas -->
+      <ng-container matColumnDef="gas">
+        <th mat-header-cell *matHeaderCellDef>Gas</th>
+        <td mat-cell *matCellDef="let row">{{ gas }}</td>
+      </ng-container>
+
+      <!-- Action -->
       <ng-container matColumnDef="detail">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let row">
           <button
-            mat-stroked-button
-            color="primary"
-            [routerLink]="['/factor', encodeId(row)]">
-            Ver
-          </button>
+  mat-stroked-button
+  color="primary"
+  class="expand-btn"
+  (click)="toggle(row)">
+  {{ isExpanded(row) ? 'Hide years' : 'View years' }}
+</button>
         </td>
       </ng-container>
 
+      <!-- ========== EXPANDED DETAIL COLUMN ========== -->
+
+      <ng-container matColumnDef="expandedDetail">
+        <td
+          mat-cell
+          *matCellDef="let row"
+          [attr.colspan]="columns.length">
+
+          <div
+            class="expand-panel"
+            *ngIf="isExpanded(row)">
+
+            <mat-progress-bar
+              *ngIf="loadingVariants()[row.key]"
+
+              mode="indeterminate">
+            </mat-progress-bar>
+
+           <div *ngIf="!loadingVariants()[row.key]">
+
+
+              <div
+                *ngFor="let v of variants[row.key]"
+                class="variant-row">
+
+                <div class="variant-info">
+                  <strong>{{ v.year }}</strong>
+                  <span class="dot">·</span>
+                  <span>{{ v.scope?.split('#').pop() || '—' }}</span>
+                  <span class="dot">·</span>
+                  <span>{{ v.context || '—' }}</span>
+                </div>
+
+                <button
+                  mat-button
+                  color="primary"
+                  [routerLink]="['/factor', v.cf]">
+                  View detail
+                </button>
+
+              </div>
+
+              <p *ngIf="variants[row.key]?.length === 0" class="empty">
+                No variants found.
+              </p>
+
+            </div>
+          </div>
+
+        </td>
+      </ng-container>
+
+      <!-- ================== ROWS ================== -->
+
+      <!-- Header -->
       <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+
+      <!-- Main row -->
+      <tr
+        mat-row
+        *matRowDef="let row; columns: columns"
+        class="data-row">
+      </tr>
+
+      <!-- Expanded detail row -->
+      <tr
+        mat-row
+        *matRowDef="let row; columns: ['expandedDetail']"
+        class="detail-row">
+      </tr>
 
     </table>
 

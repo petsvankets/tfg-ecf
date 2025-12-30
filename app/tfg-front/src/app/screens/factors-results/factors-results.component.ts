@@ -1,34 +1,33 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTableModule } from '@angular/material/table';
-import {MatProgressBarModule} from '@angular/material/progress-bar';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 
-import { CfkgService, FactorItem } from '../../services/cfkg.service';
+import { CfkgService, FactorGroup } from '../../services/cfkg.service';
 
 @Component({
   selector: 'app-factors-results',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     RouterModule,
     MatProgressBarModule,
     MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
     MatButtonModule,
     MatDividerModule,
     MatTableModule,
+
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
   ],
   templateUrl: './factors-results.component.html',
   styleUrls: ['./factors-results.component.scss'],
@@ -38,71 +37,105 @@ export class FactorsResultsComponent {
   private svc = inject(CfkgService);
   private route = inject(ActivatedRoute);
 
+//EXPANSION PANEL
+  expanded = new Set<string>();
+variants: Record<string, any[]> = {};
+loadingVariants = signal<Record<string, boolean>>({});
+
+
+detailColumns = ['expandedDetail'];
+
+
   searchTerm = '';
-  selectedYear = '';
-  selectedCategory = '';
+  gas = 'CO2';
 
-  years = ['2016','2017','2018','2019','2020','2021','2022','2023'];
+  items: FactorGroup[] = [];
+  loading = signal<boolean>(true);
 
-  // factores cargados
-  items = signal<FactorItem[]>([]);
-  filteredResults: FactorItem[] = [];
 
-  columns = ['name', 'unit', 'country', 'year', 'detail'];
+  columns = ['name', 'unit', 'country', 'scope', 'context', 'gas','detail'];
+
 
   constructor() {
     this.route.queryParams.subscribe(params => {
-      const q = params['q'];
-      const category = params['category'];
+      this.searchTerm = params['q'] ?? '';
+      this.gas = params['gas'] ?? 'CO2';
 
-      if (q) this.searchTerm = q;
-      if (category) this.searchTerm = category;
-
-      if (this.searchTerm.trim()) {
+      if (this.searchTerm) {
         this.search();
       }
     });
   }
 
-  loading = signal(true);
+  search(): void {
+    this.loading.set(true);
 
+    console.log('[SEARCH]', { q: this.searchTerm, gas: this.gas });
 
-  /** Ejecuta la búsqueda en el endpoint */
-  search() {
-  this.loading.set(true);
+    this.svc.searchFactors(this.searchTerm, this.gas as any).subscribe({
 
-  this.svc.searchFactors(this.searchTerm).subscribe(rows => {
-    this.items.set(rows);
-    this.filteredResults = rows;
+  next: rows => {
+    console.log('[RESULTS]', rows.length);
+    this.items = rows;   // 👈 cambio clave
     this.loading.set(false);
+  },
+  error: err => {
+    console.error(err);
+    this.items = [];
+    this.loading.set(false);
+  }
+});
+  }
+
+
+//EXPANSION PANEL METHODS
+toggle(row: FactorGroup): void {
+
+  if (this.expanded.has(row.key)) {
+    this.expanded.delete(row.key);
+    return;
+  }
+
+  this.expanded.add(row.key);
+
+  if (!this.variants[row.key]) {
+    this.variants[row.key] = [];
+  }
+
+  // 🔑 marcar loading de forma reactiva
+  this.loadingVariants.update(v => ({
+    ...v,
+    [row.key]: true
+  }));
+
+  this.svc.expandGroup(row).subscribe({
+    next: rows => {
+      this.variants[row.key] = rows;
+
+      this.loadingVariants.update(v => ({
+        ...v,
+        [row.key]: false
+      }));
+    },
+    error: err => {
+      console.error(err);
+      this.variants[row.key] = [];
+
+      this.loadingVariants.update(v => ({
+        ...v,
+        [row.key]: false
+      }));
+    }
   });
 }
 
 
-  /** FILTROS REALES */
-  applyFilters() {
-    let rows = this.items();
-
-    if (this.selectedYear) {
-      rows = rows.filter(r => String(r.latestYear) === this.selectedYear);
-    }
-
-    if (this.selectedCategory) {
-      rows = rows.filter(r =>
-        r.name.toLowerCase().includes(this.selectedCategory.toLowerCase())
-      );
-    }
-
-    if (this.searchTerm) {
-      rows = rows.filter(r =>
-        r.name.toLowerCase().includes(this.searchTerm.toLowerCase())
-      );
-    }
-
-    this.filteredResults = rows;
-  }
-
-  encodeId(it: FactorItem) {
-    return encodeURIComponent(it.id);
-  }
+isExpanded(row: FactorGroup): boolean {
+  return this.expanded.has(row.key);
 }
+
+
+
+
+}
+

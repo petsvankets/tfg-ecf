@@ -4,18 +4,24 @@ import { from, map, Observable, switchMap, forkJoin, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { EmissionFactors } from '../ldkit/cfkg-ldkit';
 
+
 // ---- Modelo de dominio que quieres usar en el frontal ----
 export interface FactorItem {
-  id: string;       // IRI del recurso factor
-  name: string;     // etiqueta legible
-  unit: string;     // tipo "kWh → kgCO2e" o similar
-  country: string;  // localización aplicable
-  latestValue?: number;
-  latestYear?: number;
-  targetGas?: string;  // 👈 nuevo
-  scope?: string;      // 👈 opcional
-  tags?: string[];
+  key: string;
+  id: string;        // IRI base del factor
+  name: string;      // nombre legible
+  unit: string;      // km → kgCO2e
+  country: string;   // país
+  targetGas: string; // CO2, CH4, etc.
 }
+
+const GAS_IRI_MAP: Record<string, string> = {
+  CO2:  'http://www.wikidata.org/entity/Q1997',
+  CO2e: 'http://www.wikidata.org/entity/Q1933140',
+  CH4:  'http://www.wikidata.org/entity/Q37129',
+  N2O:  'http://www.wikidata.org/entity/Q905750',
+};
+
 export interface FactorDetail {
   id: string;
   name: string;
@@ -35,6 +41,43 @@ export interface FactorSeriesPoint {
   value: number;
 }
 
+export interface FactorYear {
+  year: number;
+  id: string;
+}
+
+export interface FactorGroup {
+  key: string;
+
+  // Lo que se pinta en la tarjeta
+  name: string;
+  unit: string;
+  country: string;
+
+  // IRIs del grupo
+  sourceIri: string;
+  srcUnitIri: string;
+  tgtUnitIri: string;
+  locIri: string;
+  gasIri: string;
+
+  // Nuevas dimensiones
+  scopeIri?: string;
+  context?: string;
+}
+
+
+export interface FactorVariant {
+  cf: string;        // IRI del recurso
+  year: number;
+  value: number;
+  scope?: string;
+  context?: string;
+  tags?: string;
+}
+
+
+
 export interface FactorTimeseries {
   id: string;
   name: string;
@@ -53,47 +96,76 @@ export class CfkgService {
   private http = inject(HttpClient);
   private endpoint = environment.SPARQL_ENDPOINT; // 'https://sparql.cf.linkeddata.es/cf'
 
- searchFactors(
+searchFactors(
   text: string,
-  filters?: { scope?: string; year?: string; tag?: string },
-  limit = 50
-): Observable<FactorItem[]> {
-  const safeText = (text || '').replace(/"/g, '\\"');
-  const safeYear = (filters?.year || '').replace(/"/g, '\\"');
-  const safeTag = (filters?.tag || '').replace(/"/g, '\\"');
-  const scopeIri = filters?.scope || '';
+  gas: keyof typeof GAS_IRI_MAP = 'CO2e',
+  limit = 50,
+  offset = 0
+): Observable<FactorGroup[]> {
+
+  const safeText = (text ?? '').trim().replace(/"/g, '\\"');
+  if (!safeText) return of([]);
+
+  const gasIri = GAS_IRI_MAP[gas];
 
   const sparql = `
 PREFIX ecfo: <https://w3id.org/ecfo#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-SELECT ?cf ?label ?value ?srcUnit ?srcUnitLabel ?tgtUnit ?tgtUnitLabel
-       ?loc ?locLabel ?period ?scope ?tagLabel
+SELECT
+  ?source
+  ?srcUnit
+  ?tgtUnit
+  ?loc
+  ?scope
+  (SAMPLE(?cf) AS ?anyCf)
+  (SAMPLE(?sourceLabel) AS ?name)
+  (SAMPLE(?srcUnitLabel) AS ?srcUnitName)
+  (SAMPLE(?tgtUnitLabel) AS ?tgtUnitName)
+  (SAMPLE(?locLabel) AS ?country)
 WHERE {
+  BIND(<${gasIri}> AS ?gas)
+
   ?cf a ecfo:EmissionConversionFactor ;
-      rdf:value ?value ;
+      ecfo:hasEmissionTarget ?gas ;
+      ecfo:hasEmissionSource ?source ;
       ecfo:hasSourceUnit ?srcUnit ;
       ecfo:hasTargetUnit ?tgtUnit ;
       ecfo:hasApplicableLocation ?loc .
 
-  OPTIONAL { ?cf rdfs:label ?label }
-  OPTIONAL { ?srcUnit rdfs:label ?srcUnitLabel }
-  OPTIONAL { ?tgtUnit rdfs:label ?tgtUnitLabel }
-  OPTIONAL { ?loc rdfs:label ?locLabel }
-  OPTIONAL { ?cf ecfo:hasApplicablePeriod ?period }
   OPTIONAL { ?cf ecfo:hasScope ?scope }
-  OPTIONAL { ?cf ecfo:hasTag ?tag .
-             OPTIONAL { ?tag rdfs:label ?tagLabel }
+
+  OPTIONAL {
+    ?source rdfs:label ?sourceLabel .
+    FILTER(lang(?sourceLabel)="" || langMatches(lang(?sourceLabel),"en"))
+  }
+  OPTIONAL {
+    ?srcUnit rdfs:label ?srcUnitLabel .
+    FILTER(lang(?srcUnitLabel)="" || langMatches(lang(?srcUnitLabel),"en"))
+  }
+  OPTIONAL {
+    ?tgtUnit rdfs:label ?tgtUnitLabel .
+    FILTER(lang(?tgtUnitLabel)="" || langMatches(lang(?tgtUnitLabel),"en"))
+  }
+  OPTIONAL {
+    ?loc rdfs:label ?locLabel .
+    FILTER(lang(?locLabel)="" || langMatches(lang(?locLabel),"en"))
   }
 
-  ${safeText ? `FILTER(CONTAINS(LCASE(STR(?label)), LCASE("${safeText}")))` : ''}
-  ${scopeIri ? `FILTER(?scope = <${scopeIri}>)` : ''}
-  ${safeYear ? `FILTER regex(str(?period), "${safeYear}")` : ''}
-  ${safeTag ? `FILTER(CONTAINS(LCASE(STR(?tagLabel)), LCASE("${safeTag}")))` : ''}
+  OPTIONAL {
+    ?cf ecfo:hasTag/rdfs:label ?tagLabel .
+    FILTER(lang(?tagLabel)="" || langMatches(lang(?tagLabel),"en"))
+  }
+
+  FILTER(
+    CONTAINS(LCASE(STR(?sourceLabel)), LCASE("${safeText}"))
+    || CONTAINS(LCASE(STR(?tagLabel)), LCASE("${safeText}"))
+  )
 }
-ORDER BY LCASE(STR(?label))
+GROUP BY ?source ?srcUnit ?tgtUnit ?loc ?scope
+ORDER BY LCASE(STR(?sourceLabel))
 LIMIT ${limit}
+OFFSET ${offset}
 `.trim();
 
   const body = new HttpParams().set('query', sparql);
@@ -103,74 +175,120 @@ LIMIT ${limit}
   });
 
   return this.http.post<any>(this.endpoint, body.toString(), { headers }).pipe(
-    map((res) => {
+    map(res => {
       const rows = res?.results?.bindings ?? [];
 
-      // Agrupar por factor para manejar múltiples tags
-      const mapItems = new Map<
-        string,
-        { item: FactorItem; tags: Set<string> }
-      >();
+      return rows.map((r: any) => {
+        const unit = buildUnit(
+          r.srcUnitName?.value,
+          r.tgtUnitName?.value,
+          r.srcUnit?.value,
+          r.tgtUnit?.value
+        );
 
-      for (const r of rows) {
-        const id = r.cf?.value ?? '';
-        if (!id) continue;
+        return {
+          key: [
+            r.source.value,
+            r.srcUnit.value,
+            r.tgtUnit.value,
+            r.loc.value,
+            gasIri,
+            r.scope?.value ?? ''
+          ].join('|'),
 
-        let entry = mapItems.get(id);
-        if (!entry) {
-          const label = r.label?.value ?? '(sin título)';
-          const valueRaw = r.value?.value;
-          const value =
-            valueRaw != null && valueRaw !== ''
-              ? Number(valueRaw)
-              : undefined;
+          name: r.name?.value ?? '(sin nombre)',
+          unit,
+          country: r.country?.value ?? '—',
 
-          const srcUnitIri = r.srcUnit?.value ?? '';
-          const tgtUnitIri = r.tgtUnit?.value ?? '';
-          const srcUnitLabel = r.srcUnitLabel?.value;
-          const tgtUnitLabel = r.tgtUnitLabel?.value;
+          // 🔑 IRIs técnicas para la expansión
+          sourceIri: r.source.value,
+          srcUnitIri: r.srcUnit.value,
+          tgtUnitIri: r.tgtUnit.value,
+          locIri: r.loc.value,
+          gasIri,
 
-          const locLabel = r.locLabel?.value;
-          const locIri = r.loc?.value ?? '';
-
-          const period = r.period?.value ?? id;
-          const latestYear = extractYear(period);
-
-          const baseItem: FactorItem = {
-            id,
-            name: label,
-            unit: buildUnit(
-              srcUnitLabel,
-              tgtUnitLabel,
-              srcUnitIri,
-              tgtUnitIri
-            ),
-            country: locLabel || localName(locIri) || '—',
-            latestValue: value,
-            latestYear: latestYear ?? undefined,
-            tags: [],
-          };
-
-          entry = { item: baseItem, tags: new Set<string>() };
-          mapItems.set(id, entry);
-        }
-
-        const tagLabel = r.tagLabel?.value;
-        if (tagLabel) {
-          entry.tags.add(tagLabel);
-        }
-      }
-
-      const items: FactorItem[] = Array.from(mapItems.values()).map((e) => ({
-        ...e.item,
-        tags: Array.from(e.tags),
-      }));
-
-      return items;
+          scopeIri: r.scope?.value,
+        } as FactorGroup;
+      });
     })
   );
 }
 
+
+
+expandGroup(group: FactorGroup): Observable<FactorVariant[]> {
+
+  const sparql = `
+PREFIX ecfo: <https://w3id.org/ecfo#>
+PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT
+  ?year ?cf ?value
+  ?scope
+  ?context
+  (GROUP_CONCAT(DISTINCT ?tagLabelRaw; separator=" | ") AS ?tags)
+WHERE {
+  BIND(<${group.gasIri}> AS ?gas)
+  BIND(<${group.sourceIri}> AS ?source)
+  BIND(<${group.srcUnitIri}> AS ?srcUnit)
+  BIND(<${group.tgtUnitIri}> AS ?tgtUnit)
+  BIND(<${group.locIri}> AS ?loc)
+
+  ?cf a ecfo:EmissionConversionFactor ;
+      ecfo:hasEmissionTarget ?gas ;
+      ecfo:hasEmissionSource ?source ;
+      ecfo:hasSourceUnit ?srcUnit ;
+      ecfo:hasTargetUnit ?tgtUnit ;
+      ecfo:hasApplicableLocation ?loc ;
+      rdf:value ?value .
+
+  OPTIONAL { ?cf ecfo:hasScope ?scope }
+  OPTIONAL { ?cf ecfo:hasAdditionalContext ?context }
+
+  ${group.scopeIri ? `FILTER(?scope = <${group.scopeIri}>)` : ''}
+  ${group.context ? `FILTER(STR(?context) = "${group.context.replace(/"/g, '\\"')}")` : ''}
+
+  OPTIONAL {
+    ?cf ecfo:hasTag/rdfs:label ?tagLabelRaw .
+    FILTER(lang(?tagLabelRaw)="" || langMatches(lang(?tagLabelRaw),"en"))
+  }
+
+  OPTIONAL { ?cf ecfo:hasApplicablePeriod ?period }
+
+  BIND(
+    COALESCE(
+      xsd:integer(REPLACE(STR(?period), ".*((19|20)[0-9]{2}).*", "$1")),
+      xsd:integer(REPLACE(STR(?cf), ".*/((19|20)[0-9]{2})/CF_.*", "$1"))
+    ) AS ?year
+  )
+  FILTER(BOUND(?year))
+}
+GROUP BY ?year ?cf ?value ?scope ?context
+ORDER BY DESC(?year) STR(?scope) STR(?context)
+LIMIT 500
+`.trim();
+
+  const body = new HttpParams().set('query', sparql);
+  const headers = new HttpHeaders({
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    Accept: 'application/sparql-results+json',
+  });
+
+  return this.http.post<any>(this.endpoint, body.toString(), { headers }).pipe(
+    map(res =>
+      (res?.results?.bindings ?? []).map((r: any) => ({
+        cf: r.cf.value,
+        year: Number(r.year.value),
+        value: Number(r.value.value),
+        scope: r.scope?.value,
+        context: r.context?.value,
+        tags: r.tags?.value,
+      }) as FactorVariant)
+    )
+  );
+}
 
 getFactorDetail(id: string): Observable<FactorDetail> {
   return from(EmissionFactors.findByIri(id)).pipe(
@@ -218,9 +336,10 @@ getFactorTimeseries(id: string): Observable<FactorTimeseries> {
 PREFIX ecfo: <https://w3id.org/ecfo#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 
-SELECT ?cf ?label ?value ?period
-       ?srcUnit ?srcUnitLabel ?tgtUnit ?tgtUnitLabel
+SELECT ?cf ?label ?value ?year
+       ?srcUnitLabel ?tgtUnitLabel
 WHERE {
   BIND(<${iri}> AS ?base)
 
@@ -230,20 +349,30 @@ WHERE {
         ecfo:hasTargetUnit ?tgtUnit ;
         ecfo:hasApplicableLocation ?loc .
 
+  OPTIONAL { ?base ecfo:hasEmissionTarget ?baseGas }
+
   ?cf a ecfo:EmissionConversionFactor ;
       ecfo:hasEmissionSource ?source ;
-      ecfo:hasEmissionTarget ?target ;
+      ecfo:hasEmissionTarget ?baseGas ;
       ecfo:hasSourceUnit ?srcUnit ;
       ecfo:hasTargetUnit ?tgtUnit ;
       ecfo:hasApplicableLocation ?loc ;
-      rdf:value ?value .
+      rdf:value ?value ;
+      ecfo:hasApplicablePeriod ?period .
 
   OPTIONAL { ?cf rdfs:label ?label }
-  OPTIONAL { ?cf ecfo:hasApplicablePeriod ?period }
   OPTIONAL { ?srcUnit rdfs:label ?srcUnitLabel }
   OPTIONAL { ?tgtUnit rdfs:label ?tgtUnitLabel }
+
+  BIND(
+    xsd:integer(
+      REPLACE(STR(?period), ".*((19|20)[0-9]{2}).*", "$1")
+    ) AS ?year
+  )
+
+  FILTER(BOUND(?year))
 }
-ORDER BY ?period
+ORDER BY ?year
 `.trim();
 
   const body = new HttpParams().set('query', sparql);
@@ -266,26 +395,27 @@ ORDER BY ?period
 
       const first = rows[0];
 
-      const srcUnitIri = first.srcUnit?.value ?? '';
-      const tgtUnitIri = first.tgtUnit?.value ?? '';
-      const srcUnitLabel = first.srcUnitLabel?.value;
-      const tgtUnitLabel = first.tgtUnitLabel?.value;
+      const unit = buildUnit(
+        first.srcUnitLabel?.value,
+        first.tgtUnitLabel?.value,
+        '',
+        ''
+      );
 
-      const unit = buildUnit(srcUnitLabel, tgtUnitLabel, srcUnitIri, tgtUnitIri);
       const name = first.label?.value ?? '(sin título)';
 
       const series: FactorSeriesPoint[] = rows
-  .map((r: any): FactorSeriesPoint | null => {
-    const period: string = r.period?.value ?? r.cf?.value ?? '';
-    const year = extractYear(period);
-    const value = Number(r.value?.value ?? 0);
-    if (!year) return null;
-    return { year, value };
-  })
-  .filter((p: FactorSeriesPoint | null): p is FactorSeriesPoint => !!p)
-  .sort(
-    (a: FactorSeriesPoint, b: FactorSeriesPoint) => a.year - b.year
-  );
+  .map((r: any): FactorSeriesPoint => ({
+    year: Number(r.year.value),
+    value: Number(r.value.value),
+  }))
+  .reduce((acc: FactorSeriesPoint[], cur: FactorSeriesPoint) => {
+    if (!acc.find((p: FactorSeriesPoint) => p.year === cur.year)) {
+      acc.push(cur);
+    }
+    return acc;
+  }, [])
+  .sort((a: FactorSeriesPoint, b: FactorSeriesPoint) => a.year - b.year);
 
 
       return {
@@ -297,6 +427,7 @@ ORDER BY ?period
     })
   );
 }
+
 
 resolveLabel(iri: string): Observable<string> {
   if (!iri) return of('—');
