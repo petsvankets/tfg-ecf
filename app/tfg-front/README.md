@@ -1,59 +1,82 @@
-# TfgFront
+# CFKG Emission Factor Explorer (Angular)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.9.
+Single-page app to explore emission factors from the CFKG knowledge graph. Built with Angular 20, Angular Material, ng2-charts/Chart.js, and SSR-ready output. Includes search, sector shortcuts, results with expandable variants, and factor detail with time series.
 
-## Development server
+## Prerequisites
+- Node.js **18+** (recommended 20+ to match Angular 20 toolchain)
+- npm (comes with Node)
+- (Optional) Angular CLI globally: `npm install -g @angular/cli`
 
-To start a local development server, run:
-
+## Install
 ```bash
-ng serve
+npm install
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Environment
+The SPARQL endpoint is configured in `src/environments/environment.ts`:
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```ts
+export const environment = {
+	production: false,
+	SPARQL_ENDPOINT: 'https://sparql.cf.linkeddata.es/cf'
+};
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+For production, create `src/environments/environment.prod.ts` if you need a different endpoint or flags.
 
+## Run locally (SPA)
 ```bash
-ng generate --help
+npm start            # ng serve
+# then open http://localhost:4200/
 ```
 
-## Building
-
-To build the project run:
-
+## Build (SPA)
 ```bash
-ng build
+npm run build        # outputs to dist/tfg-front
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Deploy the contents of `dist/tfg-front/browser` to any static host (Azure Static Web Apps, Netlify, S3+CloudFront, etc.).
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
+## Server-side rendering preview
+Build and serve the SSR bundle (Node/Express):
 ```bash
-ng test
+npm run build
+npm run serve:ssr:tfg-front   # serves dist/tfg-front/server/server.mjs
+```
+Useful to validate hydration and SEO before deploying. Deploy both `browser` and `server` outputs to your Node host if you want SSR in production.
+
+## Tests
+```bash
+npm test   # Karma + Jasmine unit tests
 ```
 
-## Running end-to-end tests
+## Useful scripts
+| Script | Description |
+| --- | --- |
+| `npm start` | Run dev server with live reload (http://localhost:4200). |
+| `npm run build` | Production build to `dist/tfg-front`. |
+| `npm run serve:ssr:tfg-front` | Serve the SSR bundle from `dist/tfg-front/server/server.mjs`. |
+| `npm test` | Run unit tests (Karma/Jasmine). |
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
+## Project structure (high level)
+```
+src/
+	app/
+		screens/
+			factors-search/   # Landing + search form and sector shortcuts
+			factors-results/  # Results table with expandable variants
+			factor-detail/    # Factor detail + timeseries chart
+		services/           # CFKG data access
+		models/             # Data models
+		ldkit/              # LDKit config
+	environments/         # environment.ts (and optional environment.prod.ts)
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Deployment notes
+- **SPA/static:** deploy `dist/tfg-front/browser` to static hosting.
+- **SSR:** deploy both `browser` and `server` outputs; run `node dist/tfg-front/server/server.mjs` (or your process manager) and proxy traffic to it.
 
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Development tips
+- Keep Node in sync with the Angular CLI version (Node 20 is safe for Angular 20).
+- If Angular CLI is not global, run `npx ng <command>` instead of `ng <command>`.
+- When changing environments, rebuild before serving SSR (`npm run build`).

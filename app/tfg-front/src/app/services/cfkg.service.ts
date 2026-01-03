@@ -216,6 +216,73 @@ OFFSET ${offset}
 
 
 
+
+
+countFactorGroups(
+  text: string,
+  gas: keyof typeof GAS_IRI_MAP = 'CO2e'
+): Observable<number> {
+
+  const safeText = (text ?? '').trim().replace(/"/g, '\\"');
+  if (!safeText) return of(0);
+
+  const gasIri = GAS_IRI_MAP[gas];
+
+  const sparql = `
+PREFIX ecfo: <https://w3id.org/ecfo#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT (COUNT(*) AS ?total)
+WHERE {
+  {
+    SELECT DISTINCT
+      ?source ?srcUnit ?tgtUnit ?loc ?scope
+    WHERE {
+      BIND(<${gasIri}> AS ?gas)
+
+      ?cf a ecfo:EmissionConversionFactor ;
+          ecfo:hasEmissionTarget ?gas ;
+          ecfo:hasEmissionSource ?source ;
+          ecfo:hasSourceUnit ?srcUnit ;
+          ecfo:hasTargetUnit ?tgtUnit ;
+          ecfo:hasApplicableLocation ?loc .
+
+      OPTIONAL { ?cf ecfo:hasScope ?scope }
+
+      OPTIONAL {
+        ?source rdfs:label ?sourceLabel .
+        FILTER(lang(?sourceLabel)="" || langMatches(lang(?sourceLabel),"en"))
+      }
+
+      OPTIONAL {
+        ?cf ecfo:hasTag/rdfs:label ?tagLabel .
+        FILTER(lang(?tagLabel)="" || langMatches(lang(?tagLabel),"en"))
+      }
+
+      FILTER(
+        CONTAINS(LCASE(STR(?sourceLabel)), LCASE("${safeText}"))
+        || CONTAINS(LCASE(STR(?tagLabel)), LCASE("${safeText}"))
+      )
+    }
+  }
+}
+`.trim();
+
+  const body = new HttpParams().set('query', sparql);
+  const headers = new HttpHeaders({
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    Accept: 'application/sparql-results+json',
+  });
+
+  return this.http.post<any>(this.endpoint, body.toString(), { headers }).pipe(
+    map(res => Number(res?.results?.bindings?.[0]?.total?.value ?? 0))
+  );
+}
+
+
+
+
+
 expandGroup(group: FactorGroup): Observable<FactorVariant[]> {
 
   const sparql = `
@@ -242,6 +309,7 @@ WHERE {
       ecfo:hasSourceUnit ?srcUnit ;
       ecfo:hasTargetUnit ?tgtUnit ;
       ecfo:hasApplicableLocation ?loc ;
+      ecfo:hasApplicablePeriod ?period ;
       rdf:value ?value .
 
   OPTIONAL { ?cf ecfo:hasScope ?scope }
@@ -255,13 +323,9 @@ WHERE {
     FILTER(lang(?tagLabelRaw)="" || langMatches(lang(?tagLabelRaw),"en"))
   }
 
-  OPTIONAL { ?cf ecfo:hasApplicablePeriod ?period }
-
   BIND(
-    COALESCE(
-      xsd:integer(REPLACE(STR(?period), ".*((19|20)[0-9]{2}).*", "$1")),
-      xsd:integer(REPLACE(STR(?cf), ".*/((19|20)[0-9]{2})/CF_.*", "$1"))
-    ) AS ?year
+    xsd:integer(REPLACE(STR(?period), ".*((19|20)[0-9]{2}).*", "$1"))
+    AS ?year
   )
   FILTER(BOUND(?year))
 }
@@ -289,6 +353,7 @@ LIMIT 500
     )
   );
 }
+
 
 getFactorDetail(id: string): Observable<FactorDetail> {
   return from(EmissionFactors.findByIri(id)).pipe(

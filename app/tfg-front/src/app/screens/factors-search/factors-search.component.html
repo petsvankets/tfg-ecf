@@ -7,9 +7,10 @@
         <mat-icon>travel_explore</mat-icon>
       </div>
 
-      <mat-card-title>CFKG · Emission Factor Explorer</mat-card-title>
-      <mat-card-subtitle>
-        Search emission factors by activity and gas.
+      <mat-card-title class="hero-title">CFKG · Emission Factor Explorer</mat-card-title>
+      <mat-card-subtitle class="hero-subtitle">
+        <span class="pill">Fast search</span>
+        Search emission factors by activity, sector, and gas.
       </mat-card-subtitle>
     </mat-card-header>
 
@@ -18,13 +19,14 @@
 
         <!-- Search text -->
         <mat-form-field appearance="outline" class="hero-search-field">
-          <mat-label>Search factors (diesel, electricity…)</mat-label>
+          <mat-label>Search factors (diesel, electricity, aviation fuel…)</mat-label>
           <input
             matInput
             type="search"
             [value]="query()"
             (input)="query.set($any($event.target).value)"
           />
+          <mat-hint>Examples: "diesel", "electricity", "hgv"</mat-hint>
         </mat-form-field>
 
         <!-- Gas selector -->
@@ -37,11 +39,34 @@
           </mat-select>
         </mat-form-field>
 
-        <button mat-raised-button color="primary" class="hero-search-button">
-          Search
-        </button>
+        <div class="hero-actions">
+          <button mat-raised-button color="primary" class="hero-search-button" type="submit">
+            <mat-icon>search</mat-icon>
+            Search
+          </button>
+          <button mat-stroked-button type="button" (click)="clearForm()">
+            <mat-icon>refresh</mat-icon>
+            Clear
+          </button>
+        </div>
 
       </form>
+
+      <div class="suggestions">
+        <div class="suggestions-label">Quick suggestions</div>
+        <div class="suggestions-list">
+          <button
+            mat-stroked-button
+            color="primary"
+            class="suggestion-chip"
+            type="button"
+            *ngFor="let s of suggestions"
+            (click)="applySuggestion(s)"
+          >
+            {{ s }}
+          </button>
+        </div>
+      </div>
     </mat-card-content>
   </mat-card>
 

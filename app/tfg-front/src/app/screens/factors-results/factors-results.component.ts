@@ -10,7 +10,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatIconModule } from '@angular/material/icon';
 import { CfkgService, FactorGroup } from '../../services/cfkg.service';
 
 @Component({
@@ -24,10 +25,11 @@ import { CfkgService, FactorGroup } from '../../services/cfkg.service';
     MatButtonModule,
     MatDividerModule,
     MatTableModule,
-
+    MatPaginatorModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatIconModule,
   ],
   templateUrl: './factors-results.component.html',
   styleUrls: ['./factors-results.component.scss'],
@@ -43,6 +45,12 @@ variants: Record<string, any[]> = {};
 loadingVariants = signal<Record<string, boolean>>({});
 
 
+pageSize = 10;
+pageIndex = 0;
+total = signal<number>(0);
+
+
+
 detailColumns = ['expandedDetail'];
 
 
@@ -53,7 +61,7 @@ detailColumns = ['expandedDetail'];
   loading = signal<boolean>(true);
 
 
-  columns = ['name', 'unit', 'country', 'scope', 'context', 'gas','detail'];
+  columns = ['name', 'unit', 'country', 'scope', 'gas','detail'];
 
 
   constructor() {
@@ -67,25 +75,54 @@ detailColumns = ['expandedDetail'];
     });
   }
 
-  search(): void {
-    this.loading.set(true);
+search(): void {
+  this.loading.set(true);
 
-    console.log('[SEARCH]', { q: this.searchTerm, gas: this.gas });
+  const offset = this.pageIndex * this.pageSize;
 
-    this.svc.searchFactors(this.searchTerm, this.gas as any).subscribe({
+  console.log('[SEARCH]', {
+    q: this.searchTerm,
+    gas: this.gas,
+    page: this.pageIndex,
+    size: this.pageSize
+  });
 
-  next: rows => {
-    console.log('[RESULTS]', rows.length);
-    this.items = rows;   // 👈 cambio clave
-    this.loading.set(false);
-  },
-  error: err => {
-    console.error(err);
-    this.items = [];
-    this.loading.set(false);
-  }
-});
-  }
+  this.svc.searchFactors(
+    this.searchTerm,
+    this.gas as any,
+    this.pageSize,
+    offset
+  ).subscribe({
+    next: rows => {
+      this.items = rows;
+      this.loading.set(false);
+    },
+    error: err => {
+      console.error(err);
+      this.items = [];
+      this.loading.set(false);
+    }
+  });
+
+  // 👇 en paralelo: total
+  this.svc.countFactorGroups(
+    this.searchTerm,
+    this.gas as any
+  ).subscribe(total => {
+    this.total.set(total);
+  });
+}
+
+onPageChange(event: any): void {
+  this.pageIndex = event.pageIndex;
+  this.pageSize = event.pageSize;
+
+  // cerrar expansiones al cambiar de página (UX correcto)
+  this.expanded.clear();
+  this.variants = {};
+
+  this.search();
+}
 
 
 //EXPANSION PANEL METHODS
@@ -134,6 +171,50 @@ isExpanded(row: FactorGroup): boolean {
   return this.expanded.has(row.key);
 }
 
+// ================== HUMAN READABLE HELPERS ==================
+
+humanScope(scopeIri?: string): string {
+  if (!scopeIri) return 'Not specified';
+
+  const key = scopeIri.split('#').pop();
+  switch (key) {
+    case 'Scope1':
+      return 'Direct emissions';
+    case 'Scope2':
+      return 'Indirect emissions (energy)';
+    case 'Scope3':
+      return 'Other indirect emissions';
+    default:
+      return 'Not specified';
+  }
+}
+
+humanContext(context?: string): string {
+  if (!context) return 'Standard conditions';
+
+  const c = context.toLowerCase();
+  if (c.includes('0%')) return 'No load';
+  if (c.includes('50%')) return 'Half load';
+  if (c.includes('100%')) return 'Full load';
+  if (c.includes('average')) return 'Average load';
+
+  return context;
+}
+
+humanGas(gas: string): string {
+  switch (gas) {
+    case 'CO2':
+      return 'Carbon dioxide (CO₂)';
+    case 'CO2e':
+      return 'CO₂ equivalent';
+    case 'CH4':
+      return 'Methane (CH₄)';
+    case 'N2O':
+      return 'Nitrous oxide (N₂O)';
+    default:
+      return gas;
+  }
+}
 
 
 

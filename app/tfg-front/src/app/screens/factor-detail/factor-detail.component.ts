@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 
 import {
   CfkgService,
@@ -14,6 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
 
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration } from 'chart.js';
@@ -29,6 +31,7 @@ import { ChartConfiguration } from 'chart.js';
     MatChipsModule,
     MatProgressSpinnerModule,
     MatIconModule,
+    MatDividerModule,
     BaseChartDirective, // 👈 gráfico
   ],
   templateUrl: './factor-detail.component.html',
@@ -37,6 +40,7 @@ import { ChartConfiguration } from 'chart.js';
 export class FactorDetailComponent {
   private cfkg = inject(CfkgService);
   private route = inject(ActivatedRoute);
+  private location = inject(Location);
 
   // Estado básico
   factorId = signal<string>('');
@@ -79,6 +83,10 @@ export class FactorDetailComponent {
     );
     this.factorId.set(id);
     this.loadData();
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   private loadData() {
@@ -136,7 +144,29 @@ export class FactorDetailComponent {
     };
   }
 
-  backToSearch() {
-    // Si tienes routerLink en el HTML para volver, esto igual ni lo usas.
+  extractDomain(url: string): string {
+    try {
+      const domain = new URL(url).hostname;
+      return domain.replace('www.', '');
+    } catch {
+      return url;
+    }
   }
+
+  formatUnit(unit: string): string {
+    if (!unit) return 'Unknown unit';
+
+    // Dividir por '/' para obtener numerador y denominador
+    const parts = unit.split('/');
+
+    if (parts.length === 2) {
+      const numerator = parts[0].trim();
+      const denominator = parts[1].trim();
+      return `${numerator} per ${denominator}`;
+    }
+
+    return unit;
+  }
+
+
 }

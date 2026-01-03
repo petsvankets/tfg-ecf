@@ -1,8 +1,14 @@
 <header>
   <mat-toolbar color="primary" class="top-toolbar">
+    <button mat-icon-button (click)="goToSearch()" class="logo-button" title="Back to search">
+      <mat-icon class="logo-icon">eco</mat-icon>
+    </button>
     <span class="logo">CFKG Explorer</span>
+    <span class="logo-subtitle">Emission Factors Knowledge Graph</span>
     <span class="spacer"></span>
-    <button mat-button routerLink="/">Búsqueda</button>
+    <button mat-icon-button (click)="goToSearch()" class="nav-button" [matTooltip]="'Back to Search'">
+      <mat-icon>search</mat-icon>
+    </button>
   </mat-toolbar>
 </header>
 

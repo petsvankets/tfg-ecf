@@ -1,107 +1,157 @@
 <div class="detail-page">
   <div class="detail-header">
-    <button matButton="tonal" color="primary" routerLink="/" class="back-button">
-      ← Volver a la búsqueda
+    <button mat-raised-button color="primary" (click)="goBack()" class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+      Back to Results
     </button>
   </div>
 
-  <mat-card class="detail-card">
+  <mat-card class="detail-card" appearance="outlined">
     <mat-card-header>
-      <mat-card-title>Detalle del factor</mat-card-title>
+      <mat-card-title class="card-title-with-icon">
+        <mat-icon class="title-icon">eco</mat-icon>
+        Emission Factor Details
+      </mat-card-title>
       <mat-card-subtitle>
-        Información detallada del factor de emisión seleccionado en el grafo CFKG.
+        Comprehensive information about the selected emission factor from the CFKG knowledge graph.
       </mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
       <!-- Cargando -->
       <div class="loading-wrapper" *ngIf="loading()">
-        <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
-        <span>Cargando factor…</span>
+        <mat-progress-spinner mode="indeterminate" diameter="40" color="primary"></mat-progress-spinner>
+        <span class="loading-text">Loading emission factor data...</span>
       </div>
 
       <!-- Error -->
       <div *ngIf="error()" class="status status--error">
-        {{ error() }}
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ error() }}</span>
       </div>
 
       <!-- Contenido cuando hay factor -->
       <ng-container *ngIf="!loading() && !error() && factor() as d">
         <!-- Ficha principal -->
         <section class="detail-grid">
-          <div class="detail-item detail-item--full">
-            <div class="label">Nombre</div>
+          <div class="detail-item detail-item--full detail-item--highlight">
+            <div class="label">
+              <mat-icon class="label-icon">analytics</mat-icon>
+              Factor Name
+            </div>
             <div class="value value--main">{{ d.name }}</div>
           </div>
 
-          <div class="detail-item">
-            <div class="label">Valor</div>
-            <div class="value">{{ d.value }}</div>
+          <div class="detail-item detail-item--value">
+            <div class="label">
+              <mat-icon class="label-icon">functions</mat-icon>
+              Emission Value
+            </div>
+            <div class="value value--number">{{ d.value | number : '1.2-6' }}</div>
           </div>
 
           <div class="detail-item">
-            <div class="label">Unidad</div>
-            <div class="value">{{ d.unit }}</div>
+            <div class="label">
+              <mat-icon class="label-icon">straighten</mat-icon>
+              Unit of Measurement
+            </div>
+            <div class="value value--unit">
+              {{ formatUnit(d.unit) }}
+            </div>
           </div>
 
           <div class="detail-item">
-            <div class="label">Gas / objetivo</div>
-            <div class="value">{{ d.targetGas }}</div>
+            <div class="label">
+              <mat-icon class="label-icon">cloud</mat-icon>
+              Target Gas
+            </div>
+            <div class="value">
+              <span class="gas-badge">{{ d.targetGas }}</span>
+            </div>
           </div>
 
           <div class="detail-item">
-            <div class="label">País</div>
+            <div class="label">
+              <mat-icon class="label-icon">location_on</mat-icon>
+              Country / Region
+            </div>
             <div class="value">{{ d.country }}</div>
           </div>
 
           <div class="detail-item">
-            <div class="label">Año</div>
-            <div class="value">{{ d.year || '—' }}</div>
+            <div class="label">
+              <mat-icon class="label-icon">calendar_today</mat-icon>
+              Reference Year
+            </div>
+            <div class="value">{{ d.year || 'Not specified' }}</div>
           </div>
 
           <div class="detail-item">
-            <div class="label">Ámbito (scope)</div>
-            <div class="value">{{ d.scope || '—' }}</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="label">Publisher</div>
+            <div class="label">
+              <mat-icon class="label-icon">category</mat-icon>
+              Emission Scope
+            </div>
             <div class="value">
-              <a *ngIf="d.publisher" [href]="d.publisher" target="_blank" rel="noreferrer">
-                {{ d.publisher }}
-              </a>
-              <span *ngIf="!d.publisher">—</span>
+              <span class="scope-badge" *ngIf="d.scope">{{ d.scope }}</span>
+              <span *ngIf="!d.scope">Not specified</span>
             </div>
           </div>
 
           <div class="detail-item">
-            <div class="label">Fuente original</div>
+            <div class="label">
+              <mat-icon class="label-icon">business</mat-icon>
+              Data Publisher
+            </div>
+            <div class="value">
+              <a *ngIf="d.publisher" [href]="d.publisher" target="_blank" rel="noreferrer" class="external-link">
+                <mat-icon class="link-icon">open_in_new</mat-icon>
+                {{ extractDomain(d.publisher) }}
+              </a>
+              <span *ngIf="!d.publisher">Not specified</span>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <div class="label">
+              <mat-icon class="label-icon">description</mat-icon>
+              Source Document
+            </div>
             <div class="value">
               <a
                 *ngIf="d.derivedFrom"
+                mat-raised-button
+                color="accent"
                 [href]="d.derivedFrom"
                 target="_blank"
                 rel="noreferrer"
-                mat-stroked-button
+                class="source-btn"
               >
-                Ver documento
+                <mat-icon>article</mat-icon>
+                View Original Document
               </a>
-              <span *ngIf="!d.derivedFrom">—</span>
+              <span *ngIf="!d.derivedFrom">Not available</span>
             </div>
           </div>
 
           <div class="detail-item detail-item--full">
-            <div class="label">IRI</div>
+            <div class="label">
+              <mat-icon class="label-icon">link</mat-icon>
+              Unique Identifier (IRI)
+            </div>
             <div class="value">
-              <code>{{ d.id }}</code>
+              <code class="iri-code">{{ d.id }}</code>
             </div>
           </div>
 
           <div class="detail-item detail-item--full" *ngIf="d.tags?.length">
-            <div class="label">Tags</div>
+            <div class="label">
+              <mat-icon class="label-icon">label</mat-icon>
+              Classification Tags
+            </div>
             <div class="value">
-              <mat-chip-set aria-label="Tags del factor">
-                <mat-chip *ngFor="let t of d.tags" selected>
+              <mat-chip-set aria-label="Factor classification tags" class="tags-container">
+                <mat-chip *ngFor="let t of d.tags" highlighted>
+                  <mat-icon matChipAvatar>tag</mat-icon>
                   {{ t }}
                 </mat-chip>
               </mat-chip-set>
@@ -109,17 +159,20 @@
           </div>
         </section>
 
-        <hr class="divider" />
+        <mat-divider class="section-divider"></mat-divider>
 
         <!-- Serie histórica + gráfica -->
         <section class="timeseries">
-          <h2 class="section-title">Evolución en el tiempo</h2>
+          <h2 class="section-title">
+            <mat-icon class="section-icon">timeline</mat-icon>
+            Historical Evolution
+          </h2>
 
           <ng-container *ngIf="timeseries() as ts">
-            <p *ngIf="!ts.series.length" class="status status--empty">
-              No se han encontrado otros años para este factor con la misma actividad, gas, unidades
-              y localización.
-            </p>
+            <div *ngIf="!ts.series.length" class="empty-state">
+              <mat-icon class="empty-icon">info_outline</mat-icon>
+              <p>No historical data found for this factor with the same activity, gas, units, and location.</p>
+            </div>
 
             <div *ngIf="ts.series.length">
               <!-- Gráfica -->
@@ -135,17 +188,23 @@
 
               <!-- Tabla simple con la serie -->
               <div class="timeseries-table-wrapper" *ngIf="ts.series.length">
-                <table class="timeseries-table">
+                <table class="timeseries-table mat-elevation-z2">
                   <thead>
                     <tr>
-                      <th>Año</th>
-                      <th>Valor</th>
+                      <th>
+                        <mat-icon class="table-header-icon">calendar_today</mat-icon>
+                        Year
+                      </th>
+                      <th>
+                        <mat-icon class="table-header-icon">functions</mat-icon>
+                        Emission Value
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr *ngFor="let row of ts.series">
-                      <td>{{ row.year }}</td>
-                      <td>{{ row.value | number : '1.5-5' }}</td>
+                      <td class="year-cell">{{ row.year }}</td>
+                      <td class="value-cell">{{ row.value | number : '1.2-6' }}</td>
                     </tr>
                   </tbody>
                 </table>

@@ -33,7 +33,6 @@ export const ecfo = createNamespace({
   ],
 } as const);
 
-
 // --- PATCH fetch para la uni ---
 const ldkitFetch: typeof fetch = async (input, init = {}) => {
   const opts: RequestInit = { ...init };
@@ -63,76 +62,83 @@ const options: Options = {
   fetch: ldkitFetch,
 };
 
-
 const EmissionFactorSchema = {
   '@type': ecfo['EmissionConversionFactor'],
 
-  name: rdfs.label,
+  // Label del factor (no siempre existe, pero suele estar)
+  name: {
+    '@id': rdfs.label,
+    '@optional': true,
+  },
 
+  // Valor numérico (este sí es esencial)
   value: {
     '@id': rdf.value,
     '@type': xsd.decimal,
   },
 
+  // ⚠️ A partir de aquí, TODO opcional
   sourceUnit: {
     '@id': ecfo['hasSourceUnit'],
+    '@optional': true,
     '@embed': {
-      label: rdfs.label
-    }
+      label: rdfs.label,
+    },
   },
 
   targetUnit: {
     '@id': ecfo['hasTargetUnit'],
+    '@optional': true,
     '@embed': {
-      label: rdfs.label
-    }
+      label: rdfs.label,
+    },
   },
 
   location: {
     '@id': ecfo['hasApplicableLocation'],
+    '@optional': true,
     '@embed': {
-      label: rdfs.label
-    }
+      label: rdfs.label,
+    },
   },
 
   period: {
     '@id': ecfo['hasApplicablePeriod'],
-    '@optional': true
+    '@optional': true,
   },
 
   targetGas: {
     '@id': ecfo['hasEmissionTarget'],
+    '@optional': true,
     '@embed': {
-      label: rdfs.label
-    }
+      label: rdfs.label,
+    },
   },
 
   scope: {
     '@id': ecfo['hasScope'],
-    '@optional': true
+    '@optional': true,
   },
 
   tag: {
     '@id': ecfo['hasTag'],
     '@array': true,
+    '@optional': true,
     '@embed': {
-      label: rdfs.label
-    }
+      label: rdfs.label,
+    },
   },
 
   publisher: {
     '@id': dc['publisher'],
-    '@optional': true
+    '@optional': true,
   },
 
   derivedFrom: {
     '@id': prov['wasDerivedFrom'],
-    '@optional': true
-  }
+    '@optional': true,
+  },
 } as const;
-
-
-
 
 // Export Lens
 export const EmissionFactors = createLens(EmissionFactorSchema, options);

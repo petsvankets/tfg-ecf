@@ -47,6 +47,8 @@ export class FactorsSearchComponent {
     { label: 'Diesel and derivatives', tag: 'diesel', icon: 'local_gas_station' },
   ];
 
+  suggestions = ['diesel', 'electricity', 'natural gas', 'aviation fuel', 'bioethanol'];
+
   onSubmit(ev: Event) {
     ev.preventDefault();
     const q = this.query().trim();
@@ -67,5 +69,20 @@ export class FactorsSearchComponent {
         gas: this.gas(),
       }
     });
+  }
+
+  applySuggestion(term: string) {
+    this.query.set(term);
+    this.router.navigate(['/search'], {
+      queryParams: {
+        q: term,
+        gas: this.gas(),
+      }
+    });
+  }
+
+  clearForm() {
+    this.query.set('');
+    this.gas.set('CO2');
   }
 }
