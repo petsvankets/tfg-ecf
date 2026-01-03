@@ -161,6 +161,117 @@
 
         <mat-divider class="section-divider"></mat-divider>
 
+        <!-- Leyenda explicativa - Desplegable -->
+        <mat-expansion-panel class="legend-expansion-panel">
+          <mat-expansion-panel-header>
+            <mat-panel-title class="legend-panel-title">
+              <mat-icon class="legend-header-icon">help_outline</mat-icon>
+              <span class="title-text">Data Legend</span>
+              <span class="header-subtitle">Click to expand and see field explanations</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">analytics</mat-icon>
+                <strong>Factor Name</strong>
+              </div>
+              <p class="legend-description">The official name or identifier of the emission factor. This describes the specific activity, process, or product that generates emissions.</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">functions</mat-icon>
+                <strong>Emission Value</strong>
+              </div>
+              <p class="legend-description">The quantified amount of emissions (typically in CO₂ equivalent). This is the key metric that shows how much greenhouse gas is released for a given unit of activity.</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">straighten</mat-icon>
+                <strong>Unit of Measurement</strong>
+              </div>
+              <p class="legend-description">The measurement unit for the emission factor (e.g., kg CO₂/kWh, g CO₂/km). It defines what activity quantity the emission value refers to (per kilowatt-hour, per kilometer, per ton, etc.).</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">cloud</mat-icon>
+                <strong>Target Gas</strong>
+              </div>
+              <p class="legend-description">The specific greenhouse gas being measured. Common gases include CO₂ (carbon dioxide), CH₄ (methane), N₂O (nitrous oxide), or CO₂e (CO₂ equivalent, accounting for all GHGs).</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">location_on</mat-icon>
+                <strong>Country / Region</strong>
+              </div>
+              <p class="legend-description">The geographical location where this emission factor applies. Emission factors can vary significantly by country due to differences in energy sources, regulations, and industrial practices.</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">calendar_today</mat-icon>
+                <strong>Reference Year</strong>
+              </div>
+              <p class="legend-description">The year for which this data is valid or when it was last updated. Emission factors change over time as energy grids become cleaner or production methods improve.</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">category</mat-icon>
+                <strong>Emission Scope</strong>
+              </div>
+              <p class="legend-description">Classification of emissions into categories: Scope 1 (direct emissions from owned sources), Scope 2 (indirect emissions from energy consumption), or Scope 3 (other indirect emissions in the value chain).</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">business</mat-icon>
+                <strong>Data Publisher</strong>
+              </div>
+              <p class="legend-description">The organization or institution that published or maintains this emission factor data. This helps you evaluate the credibility and sourcing of the information.</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">description</mat-icon>
+                <strong>Source Document</strong>
+              </div>
+              <p class="legend-description">The original research paper, report, or official document from which this emission factor was derived. You can review the source to understand the methodology and assumptions used.</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">link</mat-icon>
+                <strong>Unique Identifier (IRI)</strong>
+              </div>
+              <p class="legend-description">A unique web identifier (Internationalized Resource Identifier) in RDF format that uniquely identifies this emission factor in the CFKG knowledge graph. It enables semantic linking and data integration.</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">label</mat-icon>
+                <strong>Classification Tags</strong>
+              </div>
+              <p class="legend-description">Semantic labels that categorize and classify the emission factor for easier discovery and organization. Tags help group related emission factors by activity type, industry, or methodology.</p>
+            </div>
+
+            <div class="legend-item">
+              <div class="legend-label">
+                <mat-icon class="legend-icon">timeline</mat-icon>
+                <strong>Historical Evolution</strong>
+              </div>
+              <p class="legend-description">A time-series chart and table showing how the emission factor has changed over multiple years. This reveals trends and helps identify when significant methodology or technology changes occurred.</p>
+            </div>
+          </div>
+        </mat-expansion-panel>
+
+        <mat-divider class="section-divider"></mat-divider>
+
         <!-- Serie histórica + gráfica -->
         <section class="timeseries">
           <h2 class="section-title">

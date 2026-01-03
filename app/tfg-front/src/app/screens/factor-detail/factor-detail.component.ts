@@ -16,6 +16,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration } from 'chart.js';
@@ -32,6 +33,7 @@ import { ChartConfiguration } from 'chart.js';
     MatProgressSpinnerModule,
     MatIconModule,
     MatDividerModule,
+    MatExpansionModule,
     BaseChartDirective, // 👈 gráfico
   ],
   templateUrl: './factor-detail.component.html',
