@@ -120,29 +120,7 @@ app/tfg-front/
 └── package.json          # Dependencias del proyecto
 ```
 
----
 
-## 🛠️ Desarrollo útil
-
-### Ejecutar pruebas unitarias
-
-```bash
-ng test
-```
-
-### Hacer lint del código
-
-```bash
-ng lint
-```
-
-### Generar componentes rápidamente
-
-```bash
-ng generate component nombre-componente
-```
-
----
 
 ## ⚡ Notas importantes
 
@@ -151,19 +129,6 @@ ng generate component nombre-componente
 - 📱 **Responsive** - Funciona bien en desktop, tablet y móvil
 - 🚀 **SSR disponible** - El proyecto incluye Server-Side Rendering configurado
 
----
-
-## 🤝 Contribuir
-
-¿Encontraste un bug? ¿Tienes una idea genial? Las contribuciones son bienvenidas. 
-
-Si quieres mejorar algo:
-
-1. Haz un fork del proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/MiIdea`)
-3. Commit tus cambios (`git commit -m 'Agrego MiIdea'`)
-4. Push a la rama (`git push origin feature/MiIdea`)
-5. Abre un Pull Request
 
 ---
 
@@ -200,7 +165,6 @@ Este proyecto está bajo la licencia especificada en el archivo `LICENSE` de est
 
 ---
 
-## 👋 ¿Preguntas?
 
 Si tienes dudas o sugerencias, no dudes en abrir un issue o contactar. ¡Nos encanta saber cómo usas esta herramienta!
 
