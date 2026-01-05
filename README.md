@@ -1,19 +1,19 @@
 # 🌍 CFKG Emission Factor Explorer
 
-Bienvenido a **CFKG Emission Factor Explorer**, una aplicación web moderna construida con Angular que te permite explorar y analizar factores de emisión desde la base de conocimiento de huella de carbono (**CFKG**). 
+Esto es una aplicación web hecha en Angular para trastear con factores de emisión sacados de la base de conocimiento de huella de carbono (CFKG).
 
-Si trabajas con sostenibilidad, análisis de carbono o simplemente quieres entender mejor el impacto ambiental de diferentes actividades, este proyecto te ayudará a navegar datos de emisión de forma intuitiva.
+Básicamente: sirve para mirar datos de emisiones de CO₂ sin volverte loco ni tener que pelearte directamente con SPARQL.
 
 ---
 
 ## 🎯 ¿Qué hace esta aplicación?
 
-Esta app se conecta a un endpoint SPARQL público que contiene información detallada sobre factores de emisión de CO₂. Puedes:
+La app se conecta a un endpoint SPARQL público con datos de factores de emisión y te deja:
 
-- 🔍 **Buscar** factores de emisión por categoría o actividad
-- 📊 **Visualizar** datos estruturados en un grafo de conocimiento
-- 💡 **Explorar** relaciones entre diferentes fuentes de emisión
-- ⚡ **Obtener resultados** en tiempo real desde la base de datos
+- 🔍 Buscar factores de emisión por actividad o categoría
+- 📊 Ver los datos más o menos ordenadoso
+- 💡 Entender de dónde salen las emisiones
+- ⚡ Obtener resultados en tiempo real del endpoint
 
 ---
 
@@ -25,17 +25,17 @@ Antes de empezar, asegúrate de tener instalados:
 - **npm** (viene con Node.js)
 - **Angular CLI** (opcional, pero recomendado)
 
-¿No tienes Angular CLI? No te preocupes, instálalo con:
+Si no tienes Angular CLI:
 
 ```bash
 npm install -g @angular/cli
 ```
 
-**💡 Tip**: Si prefieres evitar instalaciones globales, puedes usar `npx` directamente.
+Si no te gustan las instalaciones globales, puedes tirar de npx y listo.
 
 ---
 
-## 🚀 Comenzar es súper fácil
+## 🚀 Cómo arrancar la app
 
 ### 1️⃣ Navega a la carpeta correcta
 
@@ -51,7 +51,7 @@ npm install
 
 Esto descargará todas las librerías que necesita el proyecto. ☕ Esto puede tomar un minuto.
 
-### 3️⃣ Inicia el servidor de desarrollo
+### 3️⃣ Arranca el servidor
 
 ```bash
 ng serve
@@ -89,19 +89,19 @@ El resultado estará en `dist/tfg-front/` listo para servir en tu servidor web.
 
 ## 🔗 La magia: SPARQL endpoint
 
-Esta aplicación consulta datos desde:
+La app consulta datos desde aquí:
 
 ```
 https://sparql.cf.linkeddata.es/cf
 ```
 
-Es un endpoint público que contiene la base de conocimiento CFKG. La configuración se encuentra en:
+La URL está configurada en:
 
 ```
 src/environments/environment.ts
 ```
 
-¿Quieres cambiar el endpoint? Solo modifica ese archivo y ¡listo! No necesitas recompilar.
+Si quieres cambiar el endpoint, editas ese archivo y ya está.
 
 ---
 
@@ -124,10 +124,10 @@ app/tfg-front/
 
 ## ⚡ Notas importantes
 
-- 🌐 **Necesitas internet** para consultar el endpoint SPARQL
-- 🔄 **Recarga automática** en modo desarrollo (no necesitas refrescar manualmente)
-- 📱 **Responsive** - Funciona bien en desktop, tablet y móvil
-- 🚀 **SSR disponible** - El proyecto incluye Server-Side Rendering configurado
+- 🌐 Necesitas internet para que el SPARQL funcione
+- 🔄 En desarrollo, Angular se recarga solo (no necesitas refrescar manualmente)
+- 📱 Funciona bien en móvil, tablet y desktop (Responsive)
+- 🚀 El proyecto tiene SSR configurado, aunque no es obligatorio usarlo
 
 
 ---
