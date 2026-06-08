@@ -216,6 +216,21 @@ humanGas(gas: string): string {
   }
 }
 
+getShortIri(iri: string): string {
+  if (!iri) return '';
+
+  // Extraer la última parte del IRI después del último / o #
+  const parts = iri.split(/[/#]/);
+  const lastPart = parts[parts.length - 1];
+
+  // Si es muy largo, mostrar solo los últimos caracteres
+  if (lastPart.length > 40) {
+    return '...' + lastPart.slice(-40);
+  }
+
+  return lastPart;
+}
+
 
 
 }

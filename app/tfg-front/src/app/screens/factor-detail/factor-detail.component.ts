@@ -155,18 +155,42 @@ export class FactorDetailComponent {
     }
   }
 
-  formatUnit(unit: string): string {
+  formatUnit(unit: string, value: number, targetGas: string): string {
     if (!unit) return 'Unknown unit';
 
-    // Dividir por '/' para obtener numerador y denominador
-    const parts = unit.split('/');
+    console.log('[formatUnit] Input:', { unit, value, targetGas });
+
+    // Dividir por '/' o '→' para obtener numerador y denominador
+    const parts = unit.split(/[\/→]/);
 
     if (parts.length === 2) {
-      const numerator = parts[0].trim();
-      const denominator = parts[1].trim();
-      return `${numerator} per ${denominator}`;
+      // En "mile → kilogram" o "kilogram/mile"
+      // parts[0] = unidad de actividad (mile) o resultado (kilogram) según el separador
+      // parts[1] = unidad de resultado (kilogram) o actividad (mile) según el separador
+
+      // Detectar el separador usado
+      const separator = unit.includes('→') ? '→' : '/';
+
+      let activityUnit: string;
+      let resultUnit: string;
+
+      if (separator === '→') {
+        // "mile → kilogram" significa: 1 mile produce X kilogram
+        activityUnit = parts[0].trim();
+        resultUnit = parts[1].trim();
+      } else {
+        // "kilogram/mile" significa: X kilogram por 1 mile
+        resultUnit = parts[0].trim();
+        activityUnit = parts[1].trim();
+      }
+
+      // Formato: "1 mile produces 0.713 kilogram of carbon dioxide"
+      const result = `1 ${activityUnit} produces ${value.toFixed(3)} ${resultUnit} of ${targetGas}`;
+      console.log('[formatUnit] Output:', result);
+      return result;
     }
 
+    console.log('[formatUnit] Returning original unit:', unit);
     return unit;
   }
 

@@ -324,9 +324,52 @@
 }
 
 .variant-scope,
-.variant-context {
+.variant-context,
+.variant-tags {
   color: #616161;
   font-size: 0.9rem;
+}
+
+.variant-tags {
+  font-style: italic;
+  color: #757575;
+}
+
+.variant-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.variant-iri-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  background: #f5f5f5;
+  border-radius: 6px;
+  color: #1976d2;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-family: 'Courier New', monospace;
+  transition: all 0.2s ease;
+  word-break: break-all;
+  max-width: 100%;
+
+  .link-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: #e3f2fd;
+    color: #0d47a1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .detail-btn {

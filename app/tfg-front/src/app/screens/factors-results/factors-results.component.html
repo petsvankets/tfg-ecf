@@ -137,7 +137,7 @@
         <td mat-cell *matCellDef="let row">
           <button mat-stroked-button color="primary" class="expand-btn" (click)="toggle(row)">
             <mat-icon>{{ isExpanded(row) ? 'expand_less' : 'expand_more' }}</mat-icon>
-            {{ isExpanded(row) ? 'Hide' : 'View' }} years
+            {{ isExpanded(row) ? 'Hide' : 'View' }} variants
           </button>
         </td>
       </ng-container>
@@ -161,10 +161,16 @@
                   <span class="variant-context" *ngIf="v.context">{{ humanContext(v.context) }}</span>
                 </div>
 
-                <button mat-raised-button color="primary" *ngIf="v.cf" [routerLink]="['/factor', v.cf]" [queryParams]="{q: searchTerm, gas: gas}" class="detail-btn">
-                  <mat-icon>visibility</mat-icon>
-                  View Detail
-                </button>
+                <div class="variant-actions">
+                  <a *ngIf="v.cf" [href]="v.cf" target="_blank" rel="noopener noreferrer" class="variant-iri-link">
+                    <mat-icon class="link-icon">link</mat-icon>
+                    {{ v.cf }}
+                  </a>
+                  <button mat-raised-button color="primary" *ngIf="v.cf" [routerLink]="['/factor', v.cf]" [queryParams]="{q: searchTerm, gas: gas}" class="detail-btn">
+                    <mat-icon>visibility</mat-icon>
+                    View Detail
+                  </button>
+                </div>
 
                 <span *ngIf="!v.cf" class="no-detail">
                   <mat-icon>info_outline</mat-icon>
