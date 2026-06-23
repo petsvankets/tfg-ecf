@@ -1,12 +1,42 @@
-@prefix ecfo: <https://w3id.org/ecfo#> .
-@prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+# Datos de ejemplo adicionales (mismo vocabulario ECFO real que sample.ttl).
+# Añaden una segunda actividad (electricidad de red) para que la búsqueda y la
+# agrupación muestren más de un grupo.
 
-<http://example.org/ecf/petrol-uk-2020>
-  a ecfo:EmissionConversionFactor ;
-  rdfs:label "Petrol transport UK 2020"@en ;
-  ecfo:hasValue "2.31"^^<http://www.w3.org/2001/XMLSchema#decimal> ;
-  ecfo:hasUnit "kgCO2e/L" ;
-  ecfo:hasScope "Scope 1" ;
-  ecfo:year "2020" ;
-  dcterms:source <https://example.org/source/beis-2020> .
+@prefix ecfo: <https://w3id.org/ecfo#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc:   <http://purl.org/dc/elements/1.1/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix wd:   <http://www.wikidata.org/entity/> .
+@prefix ex:   <http://example.org/cfkg/> .
+
+ex:electricity rdfs:label "Grid electricity"@en .
+ex:kWh         rdfs:label "kilowatt hour"@en .
+ecfo:Scope2    rdfs:label "Scope 2"@en .
+
+ex:elec-uk-2020 a ecfo:EmissionConversionFactor ;
+  rdfs:label "Grid electricity, UK, 2020"@en ;
+  ecfo:hasEmissionSource     ex:electricity ;
+  ecfo:hasEmissionTarget     wd:Q1933140 ;
+  ecfo:hasSourceUnit         ex:kWh ;
+  ecfo:hasTargetUnit         ex:kgCO2e ;
+  ecfo:hasApplicableLocation wd:Q145 ;
+  ecfo:hasApplicablePeriod   "2020" ;
+  ecfo:hasScope              ecfo:Scope2 ;
+  rdf:value                  "0.233"^^xsd:decimal ;
+  dc:publisher               <https://www.gov.uk/government/organisations/defra> ;
+  prov:wasDerivedFrom        <https://example.org/source/defra-2020> .
+
+ex:elec-uk-2021 a ecfo:EmissionConversionFactor ;
+  rdfs:label "Grid electricity, UK, 2021"@en ;
+  ecfo:hasEmissionSource     ex:electricity ;
+  ecfo:hasEmissionTarget     wd:Q1933140 ;
+  ecfo:hasSourceUnit         ex:kWh ;
+  ecfo:hasTargetUnit         ex:kgCO2e ;
+  ecfo:hasApplicableLocation wd:Q145 ;
+  ecfo:hasApplicablePeriod   "2021" ;
+  ecfo:hasScope              ecfo:Scope2 ;
+  rdf:value                  "0.212"^^xsd:decimal ;
+  dc:publisher               <https://www.gov.uk/government/organisations/defra> ;
+  prov:wasDerivedFrom        <https://example.org/source/defra-2021> .

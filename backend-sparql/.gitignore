@@ -1,0 +1,9 @@
+# Apache Jena / Fuseki se descargan aparte (ver README.md); no se versionan.
+fuseki/
+jena/
+*.jar
+
+# Bases de datos TDB generadas localmente.
+**/dataset/
+**/run/
+*.lock

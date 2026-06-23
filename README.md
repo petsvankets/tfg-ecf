@@ -1,173 +1,110 @@
-# 🌍 CFKG Emission Factor Explorer
+# CFKG Emission Factor Explorer
 
-Esto es una aplicación web hecha en Angular para trastear con factores de emisión sacados de la base de conocimiento de huella de carbono (CFKG).
+Aplicación web, desarrollada en Angular, para explorar **factores de emisión de
+carbono** publicados como grafo de conocimiento en el **Conversion Factor Knowledge
+Graph (CFKG)**, modelado con la ontología **ECFO**.
 
-Básicamente: sirve para mirar datos de emisiones de CO₂ sin volverte loco ni tener que pelearte directamente con SPARQL.
+La aplicación es un **cliente puro de un endpoint SPARQL**: no tiene backend propio.
+Consulta directamente el endpoint público de CFKG y oculta SPARQL y RDF al usuario
+tras un flujo de tres pantallas (búsqueda → resultados agrupados → detalle).
 
----
-
-## 🎯 ¿Qué hace esta aplicación?
-
-La app se conecta a un endpoint SPARQL público con datos de factores de emisión y te deja:
-
-- 🔍 Buscar factores de emisión por actividad o categoría
-- 📊 Ver los datos más o menos ordenadoso
-- 💡 Entender de dónde salen las emisiones
-- ⚡ Obtener resultados en tiempo real del endpoint
+Trabajo Fin de Grado · Grado en Ingeniería Informática · ETSIINF, Universidad
+Politécnica de Madrid. Autor: Lucas Rodríguez Llera. Tutor: Daniel Garijo.
 
 ---
 
-## 📋 Requisitos previos
+## Funcionalidades
 
-Antes de empezar, asegúrate de tener instalados:
-
-- **Node.js** v18 o superior (descárgalo desde [nodejs.org](https://nodejs.org))
-- **npm** (viene con Node.js)
-- **Angular CLI** (opcional, pero recomendado)
-
-Si no tienes Angular CLI:
-
-```bash
-npm install -g @angular/cli
-```
-
-Si no te gustan las instalaciones globales, puedes tirar de npx y listo.
+- Búsqueda de factores por actividad, categoría o etiquetas, con filtrado por gas.
+- Resultados **agrupados** por dimensiones clave (actividad, unidades, localización y
+  gas), con expansión a las **variantes** de cada grupo (por año y condiciones).
+- Vista de **detalle** con los metadatos del factor y, cuando hay datos para varios
+  años, una **serie temporal**.
+- Acceso en tiempo real al endpoint SPARQL; los datos del grafo no se modifican.
 
 ---
 
-## 🚀 Cómo arrancar la app
+## Requisitos previos
 
-### 1️⃣ Navega a la carpeta correcta
+- **Node.js** 20.19+ (o 22.12+) y **npm**.
+- Acceso a un endpoint SPARQL 1.1 (por defecto, el endpoint público de CFKG).
+
+---
+
+## Ejecución en desarrollo
 
 ```bash
 cd app/tfg-front
-```
-
-### 2️⃣ Instala las dependencias
-
-```bash
 npm install
+npm start            # equivale a "ng serve"
 ```
 
-Esto descargará todas las librerías que necesita el proyecto. ☕ Esto puede tomar un minuto.
-
-### 3️⃣ Arranca el servidor
-
-```bash
-ng serve
-```
-
-O si lo prefieres:
-
-```bash
-npm start
-```
-
-### 4️⃣ ¡Abre en tu navegador!
-
-Una vez que veas el mensaje indicando que el servidor está listo, abre:
-
-```
-http://localhost:4200
-```
-
-**¡Eso es!** La aplicación se recargará automáticamente cada vez que hagas cambios. 🎉
+La aplicación queda disponible en `http://localhost:4200` y recarga
+automáticamente al guardar cambios.
 
 ---
 
-## 📦 Construir para producción
-
-¿Listo para desplegar? Genera una compilación optimizada:
+## Compilación para producción
 
 ```bash
-ng build --configuration production
+cd app/tfg-front
+npm run build        # salida en dist/tfg-front/browser
 ```
-
-El resultado estará en `dist/tfg-front/` listo para servir en tu servidor web.
 
 ---
 
-## 🔗 La magia: SPARQL endpoint
+## Ejecución con Docker
 
-La app consulta datos desde aquí:
+El frontend incluye un `Dockerfile` (build multistage que compila la aplicación y
+la sirve con nginx), lo que permite reproducir la ejecución sin instalar Node:
+
+```bash
+cd app/tfg-front
+docker build -t cfkg-explorer .
+docker run --rm -p 8080:80 cfkg-explorer   # -> http://localhost:8080
+```
+
+---
+
+## Configuración del endpoint SPARQL
+
+El endpoint se define en `app/tfg-front/src/environments/environment.ts`
+(`SPARQL_ENDPOINT`). Por defecto:
 
 ```
 https://sparql.cf.linkeddata.es/cf
 ```
 
-La URL está configurada en:
+Para usar un **endpoint local de prueba** (por ejemplo, cuando el público no esté
+disponible), consulta `backend-sparql/README.md`, que explica cómo levantar Apache
+Jena Fuseki y cargar los datos de ejemplo incluidos en `backend-sparql/data/`.
+
+---
+
+## Estructura del repositorio
 
 ```
-src/environments/environment.ts
+app/tfg-front/            # Aplicación Angular (código vivo)
+  src/app/services/       # CfkgService: construye las consultas SPARQL
+  src/app/ldkit/          # Lens de LDKit para la vista de detalle
+  src/app/screens/        # Pantallas: búsqueda, resultados, detalle
+  Dockerfile, nginx.conf  # Imagen reproducible del frontend
+backend-sparql/           # Endpoint SPARQL local de prueba (opcional)
+  data/*.ttl              # Datos de ejemplo en vocabulario ECFO real
 ```
 
-Si quieres cambiar el endpoint, editas ese archivo y ya está.
+---
+
+## Tecnologías
+
+- **Angular 20** (componentes standalone, *zoneless*, *signals*) y **TypeScript**.
+- **Angular Material + CDK** para la interfaz.
+- **LDKit** para la resolución de metadatos en la vista de detalle.
+- **ng2-charts / Chart.js** para la serie temporal.
+- **SPARQL 1.1** y **RDF** como capa de acceso a datos.
 
 ---
 
-## 📁 Estructura del proyecto
+## Licencia
 
-```
-app/tfg-front/
-├── src/
-│   ├── app/              # Componentes y lógica de la app
-│   ├── environments/     # Configuración por entorno
-│   ├── styles.scss       # Estilos globales
-│   ├── main.ts           # Punto de entrada
-│   └── index.html        # HTML principal
-├── public/               # Archivos estáticos
-├── angular.json          # Configuración de Angular
-└── package.json          # Dependencias del proyecto
-```
-
-
-
-## ⚡ Notas importantes
-
-- 🌐 Necesitas internet para que el SPARQL funcione
-- 🔄 En desarrollo, Angular se recarga solo (no necesitas refrescar manualmente)
-- 📱 Funciona bien en móvil, tablet y desktop (Responsive)
-- 🚀 El proyecto tiene SSR configurado, aunque no es obligatorio usarlo
-
-
----
-
-## ❓ ¿Problemas?
-
-### El servidor no inicia
-- Verifica que estés en la carpeta `app/tfg-front`
-- Intenta eliminar `node_modules` y hacer `npm install` de nuevo
-- Asegúrate de tener Node.js 18+
-
-### No conecta con el endpoint
-- Verifica tu conexión a internet
-- Comprueba que la URL en `environment.ts` sea correcta
-- Intenta acceder a la URL directamente en el navegador
-
-### Puerto 4200 ya en uso
-- Especifica un puerto diferente: `ng serve --port 4300`
-
----
-
-## 📚 Tecnologías utilizadas
-
-- **Angular 18+** - Framework frontend moderno
-- **TypeScript** - Tipado estático para JavaScript
-- **SPARQL** - Lenguaje de consulta para grafos
-- **RDF/LinkedData** - Formato de datos semánticos
-- **SCSS** - Estilos avanzados
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la licencia especificada en el archivo `LICENSE` de este repositorio.
-
----
-
-
-Si tienes dudas o sugerencias, no dudes en abrir un issue o contactar. ¡Nos encanta saber cómo usas esta herramienta!
-
-**Última actualización**: Enero 2026
-
----
+Bajo la licencia indicada en el archivo `LICENSE` del repositorio.
