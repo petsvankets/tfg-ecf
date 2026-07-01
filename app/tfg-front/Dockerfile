@@ -18,7 +18,12 @@ RUN npm run build
 
 # ---- Etapa 2: servir ----
 FROM nginx:alpine
-COPY --from=build /app/dist/tfg-front/browser /usr/share/nginx/html
+# Limpiar el contenido por defecto de nginx (incluida su página de bienvenida).
+RUN rm -rf /usr/share/nginx/html/*
+COPY --from=build /app/dist/tfg-front/browser/ /usr/share/nginx/html/
+# Con SSR configurado, el build genera el índice como index.csr.html; se renombra
+# a index.html para servirlo como SPA estática.
+RUN mv /usr/share/nginx/html/index.csr.html /usr/share/nginx/html/index.html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

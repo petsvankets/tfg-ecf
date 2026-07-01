@@ -47,7 +47,7 @@
               <mat-icon class="label-icon">functions</mat-icon>
               Emission Value
             </div>
-            <div class="value value--number">{{ d.value | number : '1.2-6' }}</div>
+            <div class="value value--number">{{ d.value | number : '1.0-6' }}</div>
           </div>
 
           <div class="detail-item">
@@ -92,7 +92,7 @@
               Emission Scope
             </div>
             <div class="value">
-              <span class="scope-badge" *ngIf="d.scope">{{ d.scope }}</span>
+              <span class="scope-badge" *ngIf="d.scope">{{ humanScope(d.scope) }}</span>
               <span *ngIf="!d.scope">Not specified</span>
             </div>
           </div>
@@ -105,7 +105,7 @@
             <div class="value">
               <a *ngIf="d.publisher" [href]="d.publisher" target="_blank" rel="noreferrer" class="external-link">
                 <mat-icon class="link-icon">open_in_new</mat-icon>
-                {{ extractDomain(d.publisher) }}
+                {{ d.publisherLabel || extractDomain(d.publisher) }}
               </a>
               <span *ngIf="!d.publisher">Not specified</span>
             </div>
@@ -315,7 +315,7 @@
                   <tbody>
                     <tr *ngFor="let row of ts.series">
                       <td class="year-cell">{{ row.year }}</td>
-                      <td class="value-cell">{{ row.value | number : '1.2-6' }}</td>
+                      <td class="value-cell">{{ row.value | number : '1.0-6' }}</td>
                     </tr>
                   </tbody>
                 </table>

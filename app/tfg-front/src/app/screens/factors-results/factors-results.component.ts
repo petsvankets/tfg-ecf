@@ -174,9 +174,12 @@ isExpanded(row: FactorGroup): boolean {
 // ================== HUMAN READABLE HELPERS ==================
 
 humanScope(scopeIri?: string): string {
+  // "Not specified" solo cuando el factor NO declara alcance en el grafo.
+  // Si lo declara pero no está mapeado, se muestra su nombre en vez de ocultarlo
+  // (comentario 26 del tutor: por qué aparece "Not specified" en todas).
   if (!scopeIri) return 'Not specified';
 
-  const key = scopeIri.split('#').pop();
+  const key = scopeIri.split('#').pop()?.split('/').pop() ?? '';
   switch (key) {
     case 'Scope1':
       return 'Direct emissions';
@@ -185,7 +188,7 @@ humanScope(scopeIri?: string): string {
     case 'Scope3':
       return 'Other indirect emissions';
     default:
-      return 'Not specified';
+      return key || 'Not specified';
   }
 }
 

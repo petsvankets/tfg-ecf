@@ -32,6 +32,7 @@ export interface FactorDetail {
   targetGas: string;
   scope?: string;
   publisher?: string;
+  publisherLabel?: string;
   derivedFrom?: string;
   tags: string[];
 }
@@ -365,11 +366,16 @@ getFactorDetail(id: string): Observable<FactorDetail> {
         targetUnit: this.resolveLabel(ef.targetUnit),
         country: this.resolveLabel(ef.location),
         gas: this.resolveLabel(ef.targetGas),
+        // Resolver la etiqueta legible del editor (comentario 27 del tutor:
+        // no mostrar la IRI cruda como "Data Publisher").
+        publisherLabel: ef.publisher
+          ? this.resolveLabel(ef.publisher)
+          : of<string | undefined>(undefined),
         tags: ef.tag && ef.tag.length
           ? forkJoin(ef.tag.map((t: string) => this.resolveLabel(t)))
           : of<string[]>([]),
       }).pipe(
-        map(({ sourceUnit, targetUnit, country, gas, tags }) => {
+        map(({ sourceUnit, targetUnit, country, gas, publisherLabel, tags }) => {
           const period = ef.period ?? id;
           const year = extractYear(period) ?? undefined;
 
@@ -383,6 +389,7 @@ getFactorDetail(id: string): Observable<FactorDetail> {
             targetGas: gas,
             scope: ef.scope ?? undefined,
             publisher: ef.publisher ?? undefined,
+            publisherLabel: publisherLabel ?? undefined,
             derivedFrom: ef.derivedFrom ?? undefined,
             tags,
           } as FactorDetail;

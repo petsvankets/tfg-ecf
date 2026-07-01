@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Location } from '@angular/common';
 
 import {
@@ -26,7 +26,6 @@ import { ChartConfiguration } from 'chart.js';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     MatCardModule,
     MatButtonModule,
     MatChipsModule,
@@ -63,13 +62,17 @@ export class FactorDetailComponent {
     maintainAspectRatio: false,
     scales: {
       x: {
-        title: { display: true, text: 'Año' },
+        title: { display: true, text: 'Year' },
       },
       y: {
-        title: { display: true, text: 'Valor del factor' },
+        title: { display: true, text: 'Factor value' },
       },
     },
     plugins: {
+      title: {
+        display: true,
+        text: '',
+      },
       legend: {
         display: true,
       },
@@ -101,6 +104,8 @@ export class FactorDetailComponent {
       next: (detail: FactorDetail) => {
         this.factor.set(detail);
         this.loading.set(false);
+        // El nombre fiable llega aquí; refrescar la gráfica si la serie ya cargó.
+        this.updateChart();
       },
       error: (e) => {
         console.error(e);
@@ -113,7 +118,7 @@ export class FactorDetailComponent {
     this.cfkg.getFactorTimeseries(id).subscribe({
       next: (ts: FactorTimeseries) => {
         this.timeseries.set(ts);
-        this.updateChart(ts);
+        this.updateChart();
       },
       error: (e) => {
         console.error(e);
@@ -121,7 +126,8 @@ export class FactorDetailComponent {
     });
   }
 
-  private updateChart(ts: FactorTimeseries) {
+  private updateChart() {
+    const ts = this.timeseries();
     if (!ts || !ts.series.length) {
       this.lineChartData = { labels: [], datasets: [] };
       return;
@@ -132,17 +138,40 @@ export class FactorDetailComponent {
     );
     const data = ts.series.map((p: FactorSeriesPoint) => p.value);
 
+    // El nombre del detalle (LDKit) es el fiable; la etiqueta de la serie puede
+    // faltar y llegar como marcador. Se ignoran los marcadores tipo "(sin título)".
+    const isPlaceholder = (s?: string | null) =>
+      !s || !s.trim() || s.trim() === '(sin título)';
+    const detailName = this.factor()?.name;
+    const factorName = !isPlaceholder(detailName)
+      ? (detailName as string).trim()
+      : !isPlaceholder(ts.name)
+        ? ts.name.trim()
+        : 'Emission factor';
+
     this.lineChartData = {
       labels,
       datasets: [
         {
           data,
-          label: 'Factor de emisión',
+          label: factorName,
           fill: false,
           tension: 0.2,
           pointRadius: 3,
         },
       ],
+    };
+
+    // Identificar el factor en el título de la gráfica (comentario 28 del tutor).
+    this.lineChartOptions = {
+      ...this.lineChartOptions,
+      plugins: {
+        ...this.lineChartOptions?.plugins,
+        title: {
+          display: true,
+          text: `Historical evolution — ${factorName}`,
+        },
+      },
     };
   }
 
@@ -158,16 +187,10 @@ export class FactorDetailComponent {
   formatUnit(unit: string, value: number, targetGas: string): string {
     if (!unit) return 'Unknown unit';
 
-    console.log('[formatUnit] Input:', { unit, value, targetGas });
-
     // Dividir por '/' o '→' para obtener numerador y denominador
     const parts = unit.split(/[\/→]/);
 
     if (parts.length === 2) {
-      // En "mile → kilogram" o "kilogram/mile"
-      // parts[0] = unidad de actividad (mile) o resultado (kilogram) según el separador
-      // parts[1] = unidad de resultado (kilogram) o actividad (mile) según el separador
-
       // Detectar el separador usado
       const separator = unit.includes('→') ? '→' : '/';
 
@@ -185,14 +208,37 @@ export class FactorDetailComponent {
       }
 
       // Formato: "1 mile produces 0.713 kilogram of carbon dioxide"
-      const result = `1 ${activityUnit} produces ${value.toFixed(3)} ${resultUnit} of ${targetGas}`;
-      console.log('[formatUnit] Output:', result);
-      return result;
+      return `1 ${activityUnit} produces ${this.formatValue(value)} ${resultUnit} of ${targetGas}`;
     }
 
-    console.log('[formatUnit] Returning original unit:', unit);
     return unit;
   }
 
+  /**
+   * Formatea el valor numérico sin ceros decimales superfluos.
+   * Corrige el comentario 27 del tutor: 75,3 no debe mostrarse como "75.300".
+   */
+  formatValue(value: number): string {
+    if (value == null || !Number.isFinite(value)) return String(value ?? '');
+    return parseFloat(value.toFixed(6)).toString();
+  }
 
+  /**
+   * Traduce el IRI de alcance (scope) a una etiqueta legible.
+   * Corrige el comentario 27 del tutor: el scope no debe mostrarse como IRI.
+   */
+  humanScope(scopeIri?: string): string {
+    if (!scopeIri) return 'Not specified';
+    const key = scopeIri.split('#').pop()?.split('/').pop() ?? '';
+    switch (key) {
+      case 'Scope1':
+        return 'Scope 1 (direct emissions)';
+      case 'Scope2':
+        return 'Scope 2 (indirect emissions, energy)';
+      case 'Scope3':
+        return 'Scope 3 (other indirect emissions)';
+      default:
+        return key || 'Not specified';
+    }
+  }
 }
